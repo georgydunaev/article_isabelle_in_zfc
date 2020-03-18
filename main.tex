@@ -1,0 +1,44 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{amsthm}
+\newtheorem{mydef}{Definition}
+\newcommand{\Var}{\mbox{Var}}
+\newcommand{\Const}{\mbox{Const}}
+\newcommand{\Spec}{\mbox{Spec}}
+\newcommand{\Types}{\mbox{Types}}
+\newcommand{\Nat}{\mathbb{N}}
+\begin{document}
+
+%\definition{qwe}
+\begin{mydef} Special symbols 
+\[ \Spec = \{"(",")",","\} \]
+\end{mydef}
+
+\begin{mydef}
+%Here is a new definition
+Alphabeth \[ \mathcal{A} = \Var\sqcup\Const\sqcup\Spec \]
+\end{mydef}
+\begin{mydef}
+\end{mydef}
+\begin{mydef}
+\end{mydef}
+\begin{mydef}
+\end{mydef}
+\begin{mydef}
+\[W(X,c):= \]
+\end{mydef}
+\begin{mydef}
+Function $f$ by recursion:
+\[f(0) = \Var\]
+\[f(n+1) = f(n)\cup W(f(n))[\Const]\]
+\end{mydef}
+\begin{mydef}
+Types
+\[\Types = \bigcup f[\Nat] \ = \bigcup_{(x\in\Nat)}f(x) \]
+\end{mydef}
+\end{document}
