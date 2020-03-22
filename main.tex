@@ -6,39 +6,95 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{amsthm}
-\newtheorem{mydef}{Definition}
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}{Lemma}
+
+\newcommand{\dom}{\mbox{dom}}
+\newcommand{\Fun}{\mbox{Fun}}
 \newcommand{\Var}{\mbox{Var}}
 \newcommand{\Const}{\mbox{Const}}
 \newcommand{\Spec}{\mbox{Spec}}
 \newcommand{\Types}{\mbox{Types}}
+\newcommand{\compat}{\mbox{compat}}
+\newcommand{\compatset}{\mbox{compatset}}
 \newcommand{\Nat}{\mathbb{N}}
+\newcommand{\Pow}{\mathcal{P}}
+\newcommand{\Union}{\bigcup}
+
+\author{Georgy Dunaev (georgedunaev@gmail.com)}
+\title{%\vspace{-1.5cm}            % Another way to do
+Set-Theoretic Foundations of Mathematics}
 \begin{document}
+\maketitle
+\section{Introduction}
+This article contain some well-known results which are necessary for reasoning about foundations by means of the same foundations. I hope it will also be implemented in Isabelle 
+\section{Recursion theorem}
+\begin{definition} Compatible pair of functions. $(compat : i \Rightarrow (i \Rightarrow o))$
+\[
+\compat(f_1,f_2) : o := \forall x \in \dom(f_1)\cap\dom(f_2). \forall y_1.\forall y_2. (x,y_1)\in f_1 \land  (x,y_2)\in f_2\rightarrow y_1=y_2 
+\]
+\end{definition}
 
+\begin{definition} A set of functions is compatible when it's pairwise compatible. $(compatset : i \Rightarrow o)$
+\[
+\compatset(S) : o := \forall f_1\in S.\forall f_2\in S.\compat(f_1,f_2) 
+\]
+\end{definition}
+
+\begin{lemma}
+$\forall x. (\exists y.(x,y)\in f)\longrightarrow \exists u\in f.\exists c\in u.x\in c$
+\end{lemma}
+
+\begin{lemma}
+$\dom(f)\in \Pow\Union\Union f$.
+\[\dom(f)\subseteq \Union\Union f\]
+\[\dom(f)\in \Pow\Union\Union f\]
+\end{lemma}
+\begin{lemma} Let F be a set, then $\{\dom(f) : f \in F \}$ is also set.
+
+\end{lemma}
+\begin{theorem}
+The union of a compatible set of functions is a function. 
+\[
+compatset(F) \Longrightarrow \Fun(\bigcup F) \land \dom(\bigcup F) = \bigcup \{\dom(f) : f \in F\}
+\]
+Proof.
+\begin{enumerate}
+\item $\Fun(\bigcup F)$
+\item $\dom(\bigcup F) = \bigcup \{\dom(f) : f \in F\}$
+\end{enumerate}
+\[1) Fun()\]
+End.
+\end{theorem}
+
+\section{Implementation of simply typed $\lambda$-calculus}
 %\definition{qwe}
-\begin{mydef} Special symbols 
+\begin{definition} Special symbols 
 \[ \Spec = \{"(",")",","\} \]
-\end{mydef}
+\end{definition}
 
-\begin{mydef}
+\begin{definition}
 %Here is a new definition
 Alphabeth \[ \mathcal{A} = \Var\sqcup\Const\sqcup\Spec \]
-\end{mydef}
-\begin{mydef}
-\end{mydef}
-\begin{mydef}
-\end{mydef}
-\begin{mydef}
-\end{mydef}
-\begin{mydef}
+\end{definition}
+\begin{definition}
+\end{definition}
+\begin{definition}
+\end{definition}
+\begin{definition}
+
+\end{definition}
+\begin{definition}
 \[W(X,c):= \]
-\end{mydef}
-\begin{mydef}
+\end{definition}
+\begin{definition}
 Function $f$ by recursion:
 \[f(0) = \Var\]
 \[f(n+1) = f(n)\cup W(f(n))[\Const]\]
-\end{mydef}
-\begin{mydef}
+\end{definition}
+\begin{definition}
 Types
 \[\Types = \bigcup f[\Nat] \ = \bigcup_{(x\in\Nat)}f(x) \]
-\end{mydef}
+\end{definition}
 \end{document}
