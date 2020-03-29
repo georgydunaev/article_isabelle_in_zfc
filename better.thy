@@ -62,53 +62,21 @@ theorem pairone : \<open>\<forall>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<
    apply(rule iffI)
 *)
   oops
-theorem pairone : \<open>\<forall>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>
-proof 
 
-(*
-  assume c:\<open>\<And>x. \<And>y. \<exists>!p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y\<close>
-*)
-(*
-  have \<open>\<And>x. \<And>y. \<exists>!p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y\<close>
-  proof (rule ex1I)
 
- 1. \<And>x y. \<forall>z. z \<in> ?a(x, y) \<longleftrightarrow>
-               z = x \<or> z = y
- 2. \<And>x y p.
-       \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y \<Longrightarrow>
-       p = ?a(x, y)
-*)
-have bad_c:\<open>\<And>x.\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>
-proof -
-  fix x
-  (*presume K:\<open>\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>*)
-  have K:\<open>\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> sorry
-  (*from K show \<open>\<And>x.\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by assumption*)
-  (*show \<open>\<And>x.\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule K)*)
-  (*from K show \<open>\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by assumption*)
-  show \<open>\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule K)
-qed
 
-(*bad
-  have c:\<open>\<And>x.\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>
-  proof (rule exE)
+(*theorem t000 : \<open>\<And>x.\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>*)
+theorem t000 : \<open>\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>
+proof (rule rev_mp)
+(*  fix x
+  fix y*)
   have \<open>\<forall>xa. \<forall>ya. \<exists>p. \<forall>z. z \<in> p \<longleftrightarrow> z = xa \<or> z = ya\<close> by (rule axpair)
   then have \<open>\<forall>ya. \<exists>p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = ya\<close> by (rule spec)
   then show \<open>\<exists>p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule spec)
 next
-*)
-have lemka:\<open>\<And>x.\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>
-proof (rule mp)
-  prefer 2
-  fix x
-  fix y
-  have \<open>\<forall>xa. \<forall>ya. \<exists>p. \<forall>z. z \<in> p \<longleftrightarrow> z = xa \<or> z = ya\<close> by (rule axpair)
-  then have \<open>\<forall>ya. \<exists>p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = ya\<close> by (rule spec)
-  then show \<open>\<exists>p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule spec)
-next
-  fix x
-  fix y
-  have \<open>(\<exists>p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y)\<longrightarrow>(\<exists>!p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y)\<close> 
+(*  fix x
+  fix y *)
+  show \<open>(\<exists>p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y)\<longrightarrow>(\<exists>!p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y)\<close> 
   proof(rule impI)
     show \<open> \<exists>p. \<forall>z. z \<in> p \<longleftrightarrow>
             z = x \<or> z = y \<Longrightarrow>
@@ -128,61 +96,78 @@ next
         assume H2:\<open>\<forall>z. z \<in> p2 \<longleftrightarrow> z = x \<or> z = y\<close>
         show \<open>p1=p2\<close> 
         proof(rule mp[OF axext])
-        show \<open>p1 \<subseteq> p2 \<and> p2 \<subseteq> p1\<close>
-        proof(rule conjI)
-          show \<open>p1 \<subseteq> p2\<close> 
-          proof(rule subsetI)
-            fix q
-            assume aq:\<open>q \<in> p1\<close>
-            from H1 have h1: \<open>q \<in> p1 \<longleftrightarrow> q = x \<or> q = y\<close> by (rule spec)
-            from H2 have h2: \<open>q \<in> p2 \<longleftrightarrow> q = x \<or> q = y\<close> by (rule spec)
-            from h1 and aq have bq:\<open>q = x \<or> q = y\<close> by (rule iffD1)
-            from h2 and bq show \<open>q \<in> p2\<close> by (rule iffD2)
-          qed
-        next
-          show \<open>p2 \<subseteq> p1\<close>
-          proof(rule subsetI)
-            fix q
-            assume aq:\<open>q \<in> p2\<close>
-            from H1 have h1: \<open>q \<in> p1 \<longleftrightarrow> q = x \<or> q = y\<close> by (rule spec)
-            from H2 have h2: \<open>q \<in> p2 \<longleftrightarrow> q = x \<or> q = y\<close> by (rule spec)
-            from h2 and aq have bq:\<open>q = x \<or> q = y\<close> by (rule iffD1)
-            from h1 and bq show \<open>q \<in> p1\<close> by (rule iffD2)
+          show \<open>p1 \<subseteq> p2 \<and> p2 \<subseteq> p1\<close>
+          proof(rule conjI)
+            show \<open>p1 \<subseteq> p2\<close> 
+            proof(rule subsetI)
+              fix q
+              assume aq:\<open>q \<in> p1\<close>
+              from H1 have h1: \<open>q \<in> p1 \<longleftrightarrow> q = x \<or> q = y\<close> by (rule spec)
+              from H2 have h2: \<open>q \<in> p2 \<longleftrightarrow> q = x \<or> q = y\<close> by (rule spec)
+              from h1 and aq have bq:\<open>q = x \<or> q = y\<close> by (rule iffD1)
+              from h2 and bq show \<open>q \<in> p2\<close> by (rule iffD2)
+            qed
+          next
+            show \<open>p2 \<subseteq> p1\<close>
+            proof(rule subsetI)
+              fix q
+              assume aq:\<open>q \<in> p2\<close>
+              from H1 have h1: \<open>q \<in> p1 \<longleftrightarrow> q = x \<or> q = y\<close> by (rule spec)
+              from H2 have h2: \<open>q \<in> p2 \<longleftrightarrow> q = x \<or> q = y\<close> by (rule spec)
+              from h2 and aq have bq:\<open>q = x \<or> q = y\<close> by (rule iffD1)
+              from h1 and bq show \<open>q \<in> p1\<close> by (rule iffD2)
+            qed
           qed
         qed
       qed
     qed
   qed
 qed
-(*
 
-  show \<open>(\<exists>p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y)\<longrightarrow>(\<exists>!p. \<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y)\<close> 
-    sorry
-
-(*
-  proof (rule spec)
-proof (rule spec)
-    apply(rule spec)
-    apply(rule axpair)
-  proof (rule impI)
-*)
-
- (*rule ex1I*)
-  have K:\<open>\<forall>z. z \<in> p \<longleftrightarrow> z = x \<or> z = y\<close> sorry
-  
-next
-  
-qed
-*)
-  have c:\<open>\<And>x.\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule lemka)
+theorem pairone : \<open>\<forall>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>
+proof -
+  have c:\<open>\<And>x.\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule t000)
   from c have c:\<open>\<And>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule allI)
-  from c show c:\<open>\<forall>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule allI)
-  
+  from c have c:\<open>\<forall>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule allI)
+  show \<open>\<forall>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule c)
 qed
-(*
+
+definition df_pair :: "[i, i, i] \<Rightarrow> o"
+  where "df_pair \<equiv> \<lambda>p.\<lambda>a.\<lambda>b.(\<forall>z.(z\<in>p\<longleftrightarrow>(z=a\<or>z=b)))"
+
+theorem pairone2 : \<open>\<forall>x.\<forall>y.\<exists>!p. df_pair(p,x,y)\<close>
+  by (unfold df_pair_def, rule pairone)
+
+(* Extension by definition: we can introduce new functional symbol because 
+the theorem "pairone" was proved. *)
+axiomatization 
+  Pair :: "[i, i] \<Rightarrow> i"  (\<open>{_,_}\<close> [90] 90)
+  where Pair_def : "x \<in> {a, b} \<equiv> ((x=a)\<or>(x=b))"
+
+
+
+
+axiomatization 
+  Union :: "i \<Rightarrow> i"  (\<open>\<Union>_\<close> [90] 90)
+
+
 (* preliminaries *)
 definition Ind :: \<open>i\<Rightarrow>o\<close>
   where Ind_def : \<open>Ind(x) == 0 \<in> x \<and> (\<forall>y\<in>x. succ(y) \<in> x)\<close>
+(*
+proof -
+  show q:\<open>\<forall>x.\<forall>y.\<exists>!p. df_pair(p,x,y)\<close> 
+  proof (unfold df_pair_def, rule pairone)
+  qed
+qed
+
+  (*have w:\<open>\<forall>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule pairone) *)
+(*  have \<open>df_pair(x)\<longleftrightarrow>\<close>*)
+
+  show \<open>\<forall>x.\<forall>y.\<exists>!p. df_pair(p,x,y)\<close> 
+  proof 
+    by assumption
+(*  where "df_pair \<equiv> \<lambda>x.\<lambda>a.\<lambda>b.(x=a\<or>x=b)" *)
 *)
 
 end
