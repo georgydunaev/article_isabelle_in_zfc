@@ -19,12 +19,28 @@ proof (unfold ite_def)
          {x \<in> {a, b} .
           \<phi> \<and> x = a \<or>
           \<not> \<phi> \<and> x = b}\<close>
-      have \<open>\<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b\<close> by (rule CollectE[OF G])
+      have U:\<open>\<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b\<close> by (rule CollectE[OF G])
+
+      have T:\<open>x = a\<close>
+      proof (rule disjE[OF U conjunct2])
+        show \<open>\<phi> \<and> x = a \<Longrightarrow> \<phi> \<and> x = a\<close> by assumption
+      next
+        assume \<open>\<not>\<phi> \<and> x = b\<close>
+        then have Y:\<open>\<not>\<phi>\<close> by (rule conjunct1)
+        show \<open>x = a\<close> by (rule notE[OF Y H])
+      qed
+      have R:\<open>x\<in>{x}\<close> by (rule upair.singletonI)
+      find_theorems "_\<in>{_}"
       show \<open>x\<in>{a}\<close>
-        sorry
+      proof (rule subst)
+        show \<open>x\<in>{x}\<close> by (rule upair.singletonI)
+      next
+        show \<open>{x} = {a}\<close> by (rule IFOL.subst_context[OF T])
+      qed
+    qed
   next
     show \<open>{a} \<subseteq> {x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b}\<close>
-    proof (*(rule subsetI) which rule is used here? *)
+    proof (*(rule subsetI)... Which rule is used here? *)
       show\<open>a \<in> {x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b} \<and>
       0 \<subseteq> {x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b}\<close>
       proof
