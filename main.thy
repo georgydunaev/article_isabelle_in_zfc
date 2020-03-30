@@ -7,6 +7,19 @@ definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ els
 definition ite :: "[o, i, i] \<Rightarrow> i" (\<open>myif _ then _ else _\<close>)
   where "ite(\<phi>, a, b) == \<Union>{x\<in>{a,b}.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
 
+theorem upairI1 : \<open>a \<in> {a, b}\<close>
+proof
+  assume \<open>a \<notin> {b}\<close>
+  show \<open>a = a\<close> by (rule refl)
+qed
+
+theorem upairI2 : \<open>b \<in> {a, b}\<close>
+proof
+  assume H:\<open>b \<notin> {b}\<close>
+  have Y:\<open>b \<in> {b}\<close> by (rule upair.singletonI)
+  show \<open>b = a\<close> by (rule notE[OF H Y])
+qed
+
 theorem ite1 : \<open>\<phi> \<Longrightarrow> ((myif \<phi> then a else b) = a)\<close>
 proof (unfold ite_def)
   assume H:\<open>\<phi>\<close>
@@ -17,7 +30,6 @@ proof (unfold ite_def)
       fix x
       assume G:\<open>x \<in> {x \<in> {a, b} .  \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b}\<close>
       have U:\<open>\<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b\<close> by (rule CollectE[OF G])
-
       have T:\<open>x = a\<close>
       proof (rule disjE[OF U conjunct2])
         show \<open>\<phi> \<and> x = a \<Longrightarrow> \<phi> \<and> x = a\<close> by assumption
@@ -42,11 +54,11 @@ proof (unfold ite_def)
       0 \<subseteq> {x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b}\<close>
       proof
         show \<open>0 \<subseteq> {x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b}\<close>
-          by blast
+          by (rule empty_subsetI)
       next
         show \<open>a \<in> {x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b}\<close>
         proof 
-          show \<open>a \<in> {a, b}\<close> by blast
+          show \<open>a \<in> {a, b}\<close> by (rule upairI1)
         next
           show \<open>\<phi> \<and> a = a \<or> \<not> \<phi> \<and> a = b\<close>
           proof (rule disjI1)
@@ -54,14 +66,14 @@ proof (unfold ite_def)
             proof
               show \<open>\<phi>\<close> by (rule H)
             next
-              show \<open>a = a\<close> by blast
+              show \<open>a = a\<close> by (rule IFOL.refl)
             qed
           qed
         qed
       qed
     qed
   qed
-  (*find_theorems "\<Union>_=\<Union>_"*)
+  find_theorems "_\<Longrightarrow>a\<in>{a,b}"
   have P1:\<open>\<Union>{x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b} = \<Union>{a}\<close>
     by (rule IFOL.subst_context[OF P])
   (*find_theorems "Lam [_]. _"*)
@@ -109,11 +121,11 @@ proof (unfold ite_def)
       0 \<subseteq> {x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b}\<close>
       proof
         show \<open>0 \<subseteq> {x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b}\<close>
-          by blast
+          by (rule empty_subsetI)
       next
         show \<open>b \<in> {x \<in> {a, b} . \<phi> \<and> x = a \<or> \<not> \<phi> \<and> x = b}\<close>
         proof 
-          show \<open>b \<in> {a, b}\<close> by blast
+          show \<open>b \<in> {a, b}\<close> by (rule upairI2)
         next
           show \<open>(\<phi> \<and> b = a) \<or> (\<not> \<phi> \<and> b = b)\<close>
           proof (rule disjI2)
@@ -121,7 +133,7 @@ proof (unfold ite_def)
             proof
               show \<open>\<not>\<phi>\<close> by (rule H)
             next
-              show \<open>b = b\<close> by blast
+              show \<open>b = b\<close> by (rule IFOL.refl)
             qed
           qed
         qed
