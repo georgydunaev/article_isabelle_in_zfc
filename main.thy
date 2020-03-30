@@ -198,4 +198,31 @@ proof
   qed
 qed
 
+  find_theorems "_\<in>domain(_)"
+theorem lemma2 : \<open>domain(f)\<subseteq>\<Union>\<Union>f\<close>
+proof
+  fix x
+  assume H1:\<open>x\<in>domain(f)\<close>
+  have H2:\<open>(\<exists>y. \<langle>x, y\<rangle> \<in> f)\<close>
+    by (rule iffD1[OF equalities.domain_iff H1])
+  show \<open>x\<in>\<Union>\<Union>f\<close>
+  proof (rule exE[OF H2])
+    fix xa
+    assume H3:\<open>\<langle>x, xa\<rangle> \<in> f\<close>
+    show \<open>x \<in> \<Union>\<Union>f\<close>
+    proof
+      show \<open>x \<in> {x}\<close> 
+        by (rule upair.singletonI)
+    next
+      show \<open>{x} \<in> \<Union>f\<close>
+      proof
+        show \<open>\<langle>x, xa\<rangle> \<in> f\<close>
+          by (rule H3)
+      next
+        show \<open>{x} \<in> \<langle>x, xa\<rangle>\<close>
+          by (rule sinup)
+      qed
+    qed
+  qed
+qed
 end
