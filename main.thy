@@ -147,4 +147,55 @@ proof (unfold ite_def)
     by (rule IFOL.trans[OF P1 P2])
 qed
 
+definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
+  where "compat(f1,f2) == \<forall>x\<in>(domain(f1)\<inter>domain(f2)).
+\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
+
+definition compatset :: \<open>i\<Rightarrow>o\<close>
+  where "compatset(S) == \<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)" 
+
+theorem sinup : \<open>{x} \<in> \<langle>x, xa\<rangle>\<close>
+proof (unfold Pair_def)
+  show \<open>{x} \<in> {{x, x}, {x, xa}}\<close>
+  proof (rule IFOL.subst)
+    show \<open>{x} \<in> {{x},{x,xa}}\<close>
+      by (rule upairI1)
+  next
+    show \<open>{{x}, {x, xa}} = {{x, x}, {x, xa}}\<close>
+      by blast
+  qed
+qed
+
+theorem lemma1 :
+(*
+\<open>\<forall> x . ((\<exists> y . \<langle>x, y\<rangle> \<in> f)
+ \<longrightarrow> (\<exists> u. u \<in> f \<and> (\<exists> c. c \<in> u \<and> x \<in> c)))\<close>
+*)
+\<open>\<forall>x.(\<exists>y.\<langle>x, y\<rangle> \<in> f)\<longrightarrow>(\<exists>u\<in>f.\<exists>c\<in>u. x\<in>c)\<close>
+proof
+  fix x
+  show \<open>(\<exists>y. \<langle>x, y\<rangle> \<in> f) \<longrightarrow> (\<exists>u\<in>f. \<exists>c\<in>u. x \<in> c)\<close>
+  proof
+    assume H1:\<open>\<exists>y. \<langle>x, y\<rangle> \<in> f\<close>
+    show \<open>\<exists>u\<in>f. \<exists>c\<in>u. x \<in> c\<close>
+    proof (rule exE[OF H1])
+      fix xa
+      assume H2:\<open>\<langle>x, xa\<rangle> \<in> f\<close>
+      show \<open>\<exists>u\<in>f. \<exists>c\<in>u. x \<in> c\<close>
+      proof
+        show \<open>\<langle>x, xa\<rangle> \<in> f\<close> by (rule H2)
+      next
+        show \<open>\<exists>c\<in>\<langle>x, xa\<rangle>. x \<in> c\<close>
+        proof 
+          show \<open>{x} \<in> \<langle>x, xa\<rangle>\<close>
+            by (rule sinup)
+        next
+          show \<open>x \<in> {x}\<close> 
+            by (rule upair.singletonI)
+        qed
+      qed
+    qed
+  qed
+qed
+
 end
