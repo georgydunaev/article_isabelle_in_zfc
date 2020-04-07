@@ -1,5 +1,91 @@
 theory main imports ZF
 begin
+(* Main aim is to prove Recursion Theorem *)
+
+definition satpc :: \<open>[i,i,i,i] \<Rightarrow> o \<close>
+  where \<open>satpc(t,\<alpha>,a,g) == (
+\<forall>n \<in> \<alpha> . (t`(succ(n))) = (g ` (<(t`n), n>)))\<close>
+                            
+(* m-step computation based on a and g *)
+definition partcomp :: \<open>[i,i,i,i,i]=>o\<close>
+  where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and>
+(t`0=a) \<and> satpc(t,succ(m),a,g)\<close>
+
+(* F *)
+definition pcs :: \<open>[i,i,i]\<Rightarrow>i\<close>
+  where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
+
+theorem requniqlem : \<open>\<And>f y. f \<in> nat -> A \<and>
+           f ` 0 = a \<and>
+           satpc(f, nat, a, g) \<Longrightarrow>
+           y \<in> nat -> A \<and>
+           y ` 0 = a \<and>
+           satpc(y, nat, a, g) \<Longrightarrow>
+           f \<subseteq> y\<close>
+proof
+  show \<open>\<And>f y x.
+       f \<in> nat -> A \<and>
+       f ` 0 = a \<and> satpc(f, nat, a, g) \<Longrightarrow>
+       y \<in> nat -> A \<and>
+       y ` 0 = a \<and> satpc(y, nat, a, g) \<Longrightarrow>
+       x \<in> f \<Longrightarrow> x \<in> y\<close>
+    sorry
+qed
+
+theorem recursion:
+  assumes H1:\<open>a \<in> A\<close>
+  assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
+  shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,a,g))\<close>
+proof 
+  show \<open>\<exists>f. f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, a, g)\<close>
+  proof 
+    show \<open>pcs(A,a,g) \<in> nat -> A \<and> pcs(A,a,g) ` 0 = a \<and> satpc(pcs(A,a,g), nat, a, g)\<close>
+    proof
+      show \<open>pcs(A,a,g) \<in> nat -> A\<close>
+        sorry
+    next
+      show \<open>pcs(A, a, g) ` 0 = a \<and> satpc(pcs(A, a, g), nat, a, g)\<close>
+      proof 
+        show \<open>pcs(A, a, g) ` 0 = a\<close>
+          sorry
+      next
+        show \<open>satpc(pcs(A, a, g), nat, a, g)\<close>
+          sorry
+      qed
+    qed
+  qed
+next
+  show \<open>\<And>f y. f \<in> nat -> A \<and>
+           f ` 0 = a \<and>
+           satpc(f, nat, a, g) \<Longrightarrow>
+           y \<in> nat -> A \<and>
+           y ` 0 = a \<and>
+           satpc(y, nat, a, g) \<Longrightarrow>
+           f = y\<close>
+  proof
+    show \<open> \<And>f y. f \<in> nat -> A \<and>
+           f ` 0 = a \<and>
+           satpc(f, nat, a, g) \<Longrightarrow>
+           y \<in> nat -> A \<and>
+           y ` 0 = a \<and>
+           satpc(y, nat, a, g) \<Longrightarrow>
+           f \<subseteq> y\<close>
+      by (rule requniqlem)
+  next
+    show \<open>\<And>f y. f \<in> nat -> A \<and>
+           f ` 0 = a \<and>
+           satpc(f, nat, a, g) \<Longrightarrow>
+           y \<in> nat -> A \<and>
+           y ` 0 = a \<and>
+           satpc(y, nat, a, g) \<Longrightarrow>
+           y \<subseteq> f\<close>
+      by (rule requniqlem)
+  qed
+qed
+
+
+
+
 
 definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ else _\<close>)
   where "fite(A, \<phi>, a, b) == \<Union>{x\<in>A.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
