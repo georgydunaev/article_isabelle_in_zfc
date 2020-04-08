@@ -15,6 +15,48 @@ definition partcomp :: \<open>[i,i,i,i,i]=>o\<close>
 definition pcs :: \<open>[i,i,i]\<Rightarrow>i\<close>
   where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
 
+theorem fuissu : \<open>f \<in> X -> Y \<Longrightarrow> f \<subseteq> X\<times>Y\<close>
+proof
+  fix w
+  assume H1 : \<open>f \<in> X -> Y\<close>
+  then have J1:\<open>f \<in> {q\<in>Pow(Sigma(X,\<lambda>_.Y)). X\<subseteq>domain(q) & function(q)}\<close>
+    by (unfold Pi_def) 
+  then have J2:\<open>f \<in> Pow(Sigma(X,\<lambda>_.Y))\<close>
+    by auto
+  then have J3:\<open>f \<subseteq> Sigma(X,\<lambda>_.Y)\<close>
+    by auto
+  assume H2 : \<open>w \<in> f\<close>
+  from J3 and H2 have \<open>w\<in>Sigma(X,\<lambda>_.Y)\<close>
+    by auto
+  then have J4:\<open>w \<in> (\<Union>x\<in>X. (\<Union>y\<in>Y. {\<langle>x,y\<rangle>}))\<close>
+    by auto
+  show \<open>w \<in> X*Y\<close>
+  proof (rule UN_E[OF J4])
+    fix x
+    assume V1:\<open>x \<in> X\<close>
+    assume V2:\<open>w \<in> (\<Union>y\<in>Y. {\<langle>x, y\<rangle>})\<close>
+    show \<open>w \<in> X \<times> Y\<close>
+    proof (rule UN_E[OF V2])
+      fix y
+      assume V3:\<open>y \<in> Y\<close>
+      assume V4:\<open>w \<in> {\<langle>x, y\<rangle>}\<close>
+      then have V4:\<open>w = \<langle>x, y\<rangle>\<close>
+        by auto
+      have v5:\<open>\<langle>x, y\<rangle> \<in> Sigma(X,\<lambda>_.Y)\<close>
+      proof(rule SigmaI)
+        show \<open>x \<in> X\<close> by (rule V1)
+      next
+        show \<open>y \<in> Y\<close> by (rule V3)
+      qed
+      then have V5:\<open>\<langle>x, y\<rangle> \<in> X*Y\<close> 
+        by auto
+      from V4 and V5 show \<open>w \<in> X \<times> Y\<close> by auto
+    qed
+  qed
+qed
+
+
+
 theorem requniqlem : \<open>\<And>f y. f \<in> nat -> A \<and>
            f ` 0 = a \<and>
            satpc(f, nat, a, g) \<Longrightarrow>
@@ -23,6 +65,10 @@ theorem requniqlem : \<open>\<And>f y. f \<in> nat -> A \<and>
            satpc(y, nat, a, g) \<Longrightarrow>
            f \<subseteq> y\<close>
 proof
+  have \<open>fst(x) \<in> nat\<close>
+    sorry
+  have \<open>fst(x) = 0 \<or> (\<exists>y. fst(x) = succ(y))\<close>
+    sorry
   show \<open>\<And>f y x.
        f \<in> nat -> A \<and>
        f ` 0 = a \<and> satpc(f, nat, a, g) \<Longrightarrow>
