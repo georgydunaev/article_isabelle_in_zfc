@@ -2,6 +2,76 @@ theory main imports ZF
 begin
 (* Main aim is to prove Recursion Theorem *)
 
+(* 1. Union of compatible set of functions is function*)
+definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
+  where "compat(f1,f2) == \<forall>x\<in>(domain(f1)\<inter>domain(f2)).
+\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
+
+definition compatset :: \<open>i\<Rightarrow>o\<close>
+  where "compatset(S) == \<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)" 
+
+theorem upairI1 : \<open>a \<in> {a, b}\<close>
+proof
+  assume \<open>a \<notin> {b}\<close>
+  show \<open>a = a\<close> by (rule refl)
+qed
+
+theorem upairI2 : \<open>b \<in> {a, b}\<close>
+proof
+  assume H:\<open>b \<notin> {b}\<close>
+  have Y:\<open>b \<in> {b}\<close> by (rule upair.singletonI)
+  show \<open>b = a\<close> by (rule notE[OF H Y])
+qed
+
+theorem sinup : \<open>{x} \<in> \<langle>x, xa\<rangle>\<close>
+proof (unfold Pair_def)
+  show \<open>{x} \<in> {{x, x}, {x, xa}}\<close>
+  proof (rule IFOL.subst)
+    show \<open>{x} \<in> {{x},{x,xa}}\<close>
+      by (rule upairI1)
+  next
+    show \<open>{{x}, {x, xa}} = {{x, x}, {x, xa}}\<close>
+      by blast
+  qed
+qed
+
+theorem compatsetunionfun : 
+  fixes S
+  assumes H0:\<open>compatset(S)\<close>
+  shows \<open>function(\<Union>S)\<close>
+proof(unfold function_def)
+  from H0 have H0:\<open>\<forall>f1 \<in> S. \<forall>f2 \<in> S. compat(f1,f2)\<close> by (unfold compatset_def)
+  show \<open> \<forall>x y1. \<langle>x, y1\<rangle> \<in> \<Union>S \<longrightarrow> 
+          (\<forall>y2. \<langle>x, y2\<rangle> \<in> \<Union>S \<longrightarrow> y1 = y2)\<close>
+  proof(rule allI, rule allI, rule impI, rule allI, rule impI)
+    fix x y1 y2
+    assume F1:\<open>\<langle>x, y1\<rangle> \<in> \<Union>S\<close>
+    assume F2:\<open>\<langle>x, y2\<rangle> \<in> \<Union>S\<close> 
+    show \<open>y1=y2\<close>
+    proof(rule UnionE[OF F1], rule UnionE[OF F2])
+      fix f1 f2
+      assume J1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close>
+      assume J2:\<open>\<langle>x, y2\<rangle> \<in> f2\<close>
+      assume K1:\<open>f1 \<in> S\<close>
+      assume K2:\<open>f2 \<in> S\<close>
+      have R:\<open>\<forall>f2 \<in> S. compat(f1,f2)\<close> by (rule bspec[OF H0 K1])
+      have R:\<open>compat(f1,f2)\<close> by (rule bspec[OF R K2])
+      from R have R:\<open>\<forall>x\<in>(domain(f1)\<inter>domain(f2)).
+        \<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (unfold compat_def)
+      find_theorems "_\<Longrightarrow>_\<in> domain(_)"
+      from J1 have Y1:\<open>x \<in> domain(f1)\<close> by (rule equalities.domainI)
+      from J2 have Y2:\<open>x \<in> domain(f2)\<close> by (rule equalities.domainI)
+      from Y1 and Y2 have Y: \<open>x \<in> domain(f1)\<inter>domain(f2)\<close> by (rule IntI)
+      have R:\<open>\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule bspec[OF R Y])
+      have R:\<open>\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule spec[OF R])
+      have R:\<open>\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule spec[OF R])
+      from J1 and J2 have J:\<open>\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2\<close> by (rule conjI)
+      show \<open>y1=y2\<close> by (rule mp[OF R J])
+    qed
+  qed
+qed
+
+(* *. Recursion theorem *)
 definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
   where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
                             
@@ -53,16 +123,6 @@ proof
     qed
   qed
 qed
-
-(* Maybe not true!
-theorem funext : 
-  fixes A f1 f2
-  assumes D1:\<open>dom(f1) = A\<close>
-  assumes D2:\<open>dom(f2) = A\<close>
-  assumes \<open>\<forall>x\<in>A. (f1`x=f2`x)\<close>
-  shows \<open>f1 = f2\<close>
-proof
-*)
 
 theorem recuniq : 
   fixes f
@@ -132,14 +192,10 @@ proof
         qed
       next
         show \<open>nat \<subseteq> domain(\<Union>pcs(A, a, g)) \<and> function(\<Union>pcs(A, a, g))\<close>
-        proof 
+        proof
           show \<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
           proof(unfold pcs_def)
-            show \<open> nat \<subseteq>
-    domain
-     (\<Union>{t \<in> Pow(nat \<times> A) .
-         \<exists>m. partcomp
-              (A, t, m, a, g)})\<close>
+            show \<open>nat \<subseteq> domain(\<Union>{t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)})\<close>
               sorry (*by blast*)
           qed
         next
@@ -150,9 +206,12 @@ proof
             proof(rule allI, rule allI, rule impI, rule allI, rule impI)
               fix x y1 y2
               assume F1:\<open>\<langle>x, y1\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
+              then have M1:\<open>\<langle>x, y1\<rangle> \<in> \<Union>{t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)}\<close>
+                by (unfold pcs_def)
               assume F2:\<open>\<langle>x, y2\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
 
               show \<open>y1=y2\<close>
+              
                 sorry
  (*         proof(unfold pcs_def)
             show \<open>function (\<Union>{t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)})\<close>
@@ -194,19 +253,6 @@ definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ els
 
 definition ite :: "[o, i, i] \<Rightarrow> i" (\<open>myif _ then _ else _\<close>)
   where "ite(\<phi>, a, b) == \<Union>{x\<in>{a,b}.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
-
-theorem upairI1 : \<open>a \<in> {a, b}\<close>
-proof
-  assume \<open>a \<notin> {b}\<close>
-  show \<open>a = a\<close> by (rule refl)
-qed
-
-theorem upairI2 : \<open>b \<in> {a, b}\<close>
-proof
-  assume H:\<open>b \<notin> {b}\<close>
-  have Y:\<open>b \<in> {b}\<close> by (rule upair.singletonI)
-  show \<open>b = a\<close> by (rule notE[OF H Y])
-qed
 
 theorem ite1 : \<open>\<phi> \<Longrightarrow> ((myif \<phi> then a else b) = a)\<close>
 proof (unfold ite_def)
@@ -335,25 +381,7 @@ proof (unfold ite_def)
     by (rule IFOL.trans[OF P1 P2])
 qed
 
-definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
-  where "compat(f1,f2) == \<forall>x\<in>(domain(f1)\<inter>domain(f2)).
-\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
-
-definition compatset :: \<open>i\<Rightarrow>o\<close>
-  where "compatset(S) == \<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)" 
-
-theorem sinup : \<open>{x} \<in> \<langle>x, xa\<rangle>\<close>
-proof (unfold Pair_def)
-  show \<open>{x} \<in> {{x, x}, {x, xa}}\<close>
-  proof (rule IFOL.subst)
-    show \<open>{x} \<in> {{x},{x,xa}}\<close>
-      by (rule upairI1)
-  next
-    show \<open>{{x}, {x, xa}} = {{x, x}, {x, xa}}\<close>
-      by blast
-  qed
-qed
-
+(* === This works but not used === *)
 theorem lemma1 :
 (*
 \<open>\<forall> x . ((\<exists> y . \<langle>x, y\<rangle> \<in> f)
@@ -413,4 +441,15 @@ proof
     qed
   qed
 qed
+
+(* Maybe not be true!
+theorem funext : 
+  fixes A f1 f2
+  assumes D1:\<open>dom(f1) = A\<close>
+  assumes D2:\<open>dom(f2) = A\<close>
+  assumes \<open>\<forall>x\<in>A. (f1`x=f2`x)\<close>
+  shows \<open>f1 = f2\<close>
+proof
+*)
+
 end
