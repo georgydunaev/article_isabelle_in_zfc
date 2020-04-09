@@ -2,14 +2,14 @@ theory main imports ZF
 begin
 (* Main aim is to prove Recursion Theorem *)
 
-definition satpc :: \<open>[i,i,i,i] \<Rightarrow> o \<close>
-  where \<open>satpc(t,\<alpha>,a,g) == (
+definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
+  where \<open>satpc(t,\<alpha>,g) == (
 \<forall>n \<in> \<alpha> . (t`(succ(n))) = (g ` (<(t`n), n>)))\<close>
                             
 (* m-step computation based on a and g *)
 definition partcomp :: \<open>[i,i,i,i,i]=>o\<close>
   where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and>
-(t`0=a) \<and> satpc(t,succ(m),a,g)\<close>
+(t`0=a) \<and> satpc(t,succ(m),g)\<close>
 
 (* F *)
 definition pcs :: \<open>[i,i,i]\<Rightarrow>i\<close>
@@ -59,16 +59,16 @@ qed
 
 theorem requniqlem : \<open>\<And>f y. f \<in> nat -> A \<and>
            f ` 0 = a \<and>
-           satpc(f, nat, a, g) \<Longrightarrow>
+           satpc(f, nat, g) \<Longrightarrow>
            y \<in> nat -> A \<and>
            y ` 0 = a \<and>
-           satpc(y, nat, a, g) \<Longrightarrow>
+           satpc(y, nat, g) \<Longrightarrow>
            f \<subseteq> y\<close>
 proof
   fix f
-  assume H0:\<open>f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, a, g)\<close>
-  fix y
-  assume H1:\<open>y \<in> nat -> A \<and> y ` 0 = a \<and> satpc(y, nat, a, g)\<close>
+  assume H0:\<open>f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
+  fix t
+  assume H1:\<open>t \<in> nat -> A \<and> t ` 0 = a \<and> satpc(t, nat, g)\<close>
   fix x
   assume H2:\<open>x \<in> f\<close>
 (*
@@ -76,18 +76,68 @@ f \<in> nat -> A
 f\<in>Pow(Sigma(nat,\<lambda>_.A)) ==== f \<in> Pow(nat \<times> A)
 f\<subseteq>Sigma(nat,\<lambda>_.A)
 *)
+  from H1 have H11:\<open>t ` 0 = a\<close> by auto
+  from H1 have H10:\<open>t \<in> nat -> A\<close> by auto
+  from H0 have H01:\<open>f ` 0 = a\<close> by auto
   from H0 have H00:\<open>f \<in> nat -> A\<close> by auto
   then have \<open>f\<in>{f\<in>Pow(Sigma(nat,\<lambda>_.A)). nat\<subseteq>domain(f) & function(f)}\<close> by (unfold Pi_def)
   then have \<open>f\<in>Pow(nat \<times> A)\<close> by (rule CollectD1)
   then have Q:\<open>f\<subseteq>nat*A\<close> by auto
-  from H2 and Q have \<open>x\<in>nat*A\<close> by auto
-  then have \<open>fst(x) \<in> nat\<close> by auto
+  from H2 and Q have J0:\<open>x\<in>nat*A\<close> by auto
+  then have J:\<open>fst(x) \<in> nat\<close> by auto
   then have \<open>fst(x) = 0 \<or> (\<exists>y. fst(x) = succ(y))\<close>
-    sorry
+  proof (rule natE)
+    show \<open>fst(x) = 0 \<Longrightarrow>
+    fst(x) = 0 \<or> (\<exists>y. fst(x) = succ(y))\<close>
+      by auto
+  next
+    show \<open>\<And>xa. xa \<in> nat \<Longrightarrow>
+          fst(x) = succ(xa) \<Longrightarrow>
+          fst(x) = 0 \<or>
+          (\<exists>y. fst(x) = succ(y))\<close>
+      by auto
+  qed
 
-  show \<open>x \<in> y\<close>
-    sorry
-
+  show \<open>x \<in> t\<close>
+  proof (rule natE[OF J])
+    assume K:\<open>fst(x)=0\<close>
+(*Pair_fst_snd_eq
+(simp only: Pi_iff)
+apply_iff
+*)
+    from J0 have M:\<open>x=<fst(x),snd(x)>\<close>
+      by auto
+    from K and M have M:\<open>x=<0,snd(x)>\<close> by auto
+    (*from H01 have \<open>snd(x) = a\<close> 
+      sorry*)
+    from H00 and H01 have P1:\<open><0, a>\<in>f\<close>
+      by (simp add: apply_iff)
+    from H10 and H11 have P2:\<open><0, a>\<in>t\<close>
+      by (simp add: apply_iff)
+(*
+apply_equality: "[| <a,b>: f;  f \<in> Pi(A,B) |] ==> f`a = b"
+apply_equality2
+*)
+    from H2 and M have TYU:\<open><0,snd(x)>\<in>f\<close> by auto
+    from TYU and P1 and H00 have EW:\<open>snd(x) = a\<close> by (rule apply_equality2)
+    from EW and M have TY:\<open>x=<0, a>\<close> by auto
+    from TY and P2 show \<open>x \<in> t\<close> by auto
+  next
+    fix n
+    assume L1:\<open>n\<in>nat\<close>
+    assume L2:\<open>fst(x) = succ(n)\<close>
+    from H1 have H13:\<open>satpc(t, nat, g)\<close> by auto
+    from H13 have H13:\<open>\<forall>n \<in> nat . (t`(succ(n))) = (g ` (<(t`n), n>))\<close> by (unfold satpc_def)
+    have Y:\<open>(t`(succ(n))) = (g ` (<(t`n), n>))\<close> 
+      by (rule bspec[OF H13 L1])
+    have RI:\<open>succ(n)\<in>nat\<close>
+      sorry
+    from RI and Y have \<open><(succ(n)), (g ` (<(t`n), n>))>\<in>t\<close>
+    (*proof (simp add: apply_iff)*)
+      sorry
+    show \<open>x \<in> t\<close>
+      sorry
+  qed
   (*show \<open>\<And>f y x.
        f \<in> nat -> A \<and>
        f ` 0 = a \<and> satpc(f, nat, a, g) \<Longrightarrow>
@@ -100,21 +150,21 @@ qed
 theorem recursion:
   assumes H1:\<open>a \<in> A\<close>
   assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
-  shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,a,g))\<close>
+  shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,g))\<close>
 proof 
-  show \<open>\<exists>f. f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, a, g)\<close>
+  show \<open>\<exists>f. f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
   proof 
-    show \<open>pcs(A,a,g) \<in> nat -> A \<and> pcs(A,a,g) ` 0 = a \<and> satpc(pcs(A,a,g), nat, a, g)\<close>
+    show \<open>pcs(A,a,g) \<in> nat -> A \<and> pcs(A,a,g) ` 0 = a \<and> satpc(pcs(A,a,g), nat, g)\<close>
     proof
       show \<open>pcs(A,a,g) \<in> nat -> A\<close>
         sorry
     next
-      show \<open>pcs(A, a, g) ` 0 = a \<and> satpc(pcs(A, a, g), nat, a, g)\<close>
+      show \<open>pcs(A, a, g) ` 0 = a \<and> satpc(pcs(A, a, g), nat, g)\<close>
       proof 
         show \<open>pcs(A, a, g) ` 0 = a\<close>
           sorry
       next
-        show \<open>satpc(pcs(A, a, g), nat, a, g)\<close>
+        show \<open>satpc(pcs(A, a, g), nat, g)\<close>
           sorry
       qed
     qed
@@ -122,27 +172,27 @@ proof
 next
   show \<open>\<And>f y. f \<in> nat -> A \<and>
            f ` 0 = a \<and>
-           satpc(f, nat, a, g) \<Longrightarrow>
+           satpc(f, nat, g) \<Longrightarrow>
            y \<in> nat -> A \<and>
            y ` 0 = a \<and>
-           satpc(y, nat, a, g) \<Longrightarrow>
+           satpc(y, nat, g) \<Longrightarrow>
            f = y\<close>
   proof
     show \<open> \<And>f y. f \<in> nat -> A \<and>
            f ` 0 = a \<and>
-           satpc(f, nat, a, g) \<Longrightarrow>
+           satpc(f, nat, g) \<Longrightarrow>
            y \<in> nat -> A \<and>
            y ` 0 = a \<and>
-           satpc(y, nat, a, g) \<Longrightarrow>
+           satpc(y, nat, g) \<Longrightarrow>
            f \<subseteq> y\<close>
       by (rule requniqlem)
   next
     show \<open>\<And>f y. f \<in> nat -> A \<and>
            f ` 0 = a \<and>
-           satpc(f, nat, a, g) \<Longrightarrow>
+           satpc(f, nat, g) \<Longrightarrow>
            y \<in> nat -> A \<and>
            y ` 0 = a \<and>
-           satpc(y, nat, a, g) \<Longrightarrow>
+           satpc(y, nat, g) \<Longrightarrow>
            y \<subseteq> f\<close>
       by (rule requniqlem)
   qed
