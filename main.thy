@@ -3,8 +3,7 @@ begin
 (* Main aim is to prove Recursion Theorem *)
 
 definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
-  where \<open>satpc(t,\<alpha>,g) == (
-\<forall>n \<in> \<alpha> . (t`(succ(n))) = (g ` (<(t`n), n>)))\<close>
+  where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
                             
 (* m-step computation based on a and g *)
 definition partcomp :: \<open>[i,i,i,i,i]=>o\<close>
@@ -118,17 +117,63 @@ theorem recursion:
 proof 
   show \<open>\<exists>f. f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
   proof 
-    show \<open>pcs(A,a,g) \<in> nat -> A \<and> pcs(A,a,g) ` 0 = a \<and> satpc(pcs(A,a,g), nat, g)\<close>
+    show \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A \<and> (\<Union>pcs(A,a,g)) ` 0 = a \<and> satpc(\<Union>pcs(A,a,g), nat, g)\<close>
     proof
-      show \<open>pcs(A,a,g) \<in> nat -> A\<close>
-        sorry
-    next
-      show \<open>pcs(A, a, g) ` 0 = a \<and> satpc(pcs(A, a, g), nat, g)\<close>
+      have A1:\<open>\<Union>pcs(A,a,g)\<in>{f\<in>Pow(nat*A). nat\<subseteq>domain(f) & function(f)}\<close>
       proof 
-        show \<open>pcs(A, a, g) ` 0 = a\<close>
+        show \<open>\<Union>pcs(A, a, g) \<in> Pow(nat \<times> A)\<close>
+        proof 
+          show \<open>\<Union>pcs(A, a, g) \<subseteq> nat \<times> A\<close>
+          proof(unfold pcs_def)
+            show \<open> \<Union>{t \<in> Pow(nat \<times> A) . \<exists>m. partcomp (A, t, m, a, g)} \<subseteq> nat \<times> A\<close>
+             (* by blast*)
+              sorry
+          qed
+        qed
+      next
+        show \<open>nat \<subseteq> domain(\<Union>pcs(A, a, g)) \<and> function(\<Union>pcs(A, a, g))\<close>
+        proof 
+          show \<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
+          proof(unfold pcs_def)
+            show \<open> nat \<subseteq>
+    domain
+     (\<Union>{t \<in> Pow(nat \<times> A) .
+         \<exists>m. partcomp
+              (A, t, m, a, g)})\<close>
+              sorry (*by blast*)
+          qed
+        next
+          show \<open>function(\<Union>pcs(A, a, g))\<close>
+          proof(unfold function_def)
+            show \<open> \<forall>x y1. \<langle>x, y1\<rangle> \<in> \<Union>pcs(A, a, g) \<longrightarrow> 
+                     (\<forall>y2. \<langle>x, y2\<rangle> \<in> \<Union>pcs(A, a, g) \<longrightarrow> y1 = y2)\<close>
+            proof(rule allI, rule allI, rule impI, rule allI, rule impI)
+              fix x y1 y2
+              assume F1:\<open>\<langle>x, y1\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
+              assume F2:\<open>\<langle>x, y2\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
+
+              show \<open>y1=y2\<close>
+                sorry
+ (*         proof(unfold pcs_def)
+            show \<open>function (\<Union>{t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)})\<close>
+              by blast*)
+            qed
+          qed
+        qed
+      qed
+      from A1 show \<open>\<Union>pcs(A,a,g) \<in> nat -> A\<close>
+      proof(fold Pi_def)
+        assume \<open>\<Union>pcs(A, a, g) \<in> nat -> A\<close>
+        then show \<open>\<Union>pcs(A, a, g) \<in> nat -> A\<close>
+          by assumption
+      qed
+    next
+      show \<open>(\<Union>pcs(A, a, g)) ` 0 = a \<and> satpc(\<Union>pcs(A, a, g), nat, g)\<close>
+      proof 
+        show \<open>(\<Union>pcs(A, a, g)) ` 0 = a\<close>
           sorry
       next
-        show \<open>satpc(pcs(A, a, g), nat, g)\<close>
+        show \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
           sorry
       qed
     qed
