@@ -55,96 +55,60 @@ proof
   qed
 qed
 
-
-
-theorem requniqlem : \<open>\<And>f y. f \<in> nat -> A \<and>
-           f ` 0 = a \<and>
-           satpc(f, nat, g) \<Longrightarrow>
-           y \<in> nat -> A \<and>
-           y ` 0 = a \<and>
-           satpc(y, nat, g) \<Longrightarrow>
-           f \<subseteq> y\<close>
+(* Maybe not true!
+theorem funext : 
+  fixes A f1 f2
+  assumes D1:\<open>dom(f1) = A\<close>
+  assumes D2:\<open>dom(f2) = A\<close>
+  assumes \<open>\<forall>x\<in>A. (f1`x=f2`x)\<close>
+  shows \<open>f1 = f2\<close>
 proof
-  fix f
-  assume H0:\<open>f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
-  fix t
-  assume H1:\<open>t \<in> nat -> A \<and> t ` 0 = a \<and> satpc(t, nat, g)\<close>
-  fix x
-  assume H2:\<open>x \<in> f\<close>
-(*
-f \<in> nat -> A
-f\<in>Pow(Sigma(nat,\<lambda>_.A)) ==== f \<in> Pow(nat \<times> A)
-f\<subseteq>Sigma(nat,\<lambda>_.A)
 *)
-  from H1 have H11:\<open>t ` 0 = a\<close> by auto
-  from H1 have H10:\<open>t \<in> nat -> A\<close> by auto
+
+theorem recuniq : 
+  fixes f
+  assumes H0:\<open>f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
+  fixes t
+  assumes H1:\<open>t \<in> nat -> A \<and> t ` 0 = a \<and> satpc(t, nat, g)\<close>
+  fixes x
+  shows \<open>f=t\<close>
+proof -
+  from H0 have H02:\<open>\<forall>n \<in> nat. (f`(succ(n))) = (g ` (<(f`n), n>))\<close> by (unfold satpc_def, auto)
   from H0 have H01:\<open>f ` 0 = a\<close> by auto
   from H0 have H00:\<open>f \<in> nat -> A\<close> by auto
-  then have \<open>f\<in>{f\<in>Pow(Sigma(nat,\<lambda>_.A)). nat\<subseteq>domain(f) & function(f)}\<close> by (unfold Pi_def)
-  then have \<open>f\<in>Pow(nat \<times> A)\<close> by (rule CollectD1)
-  then have Q:\<open>f\<subseteq>nat*A\<close> by auto
-  from H2 and Q have J0:\<open>x\<in>nat*A\<close> by auto
-  then have J:\<open>fst(x) \<in> nat\<close> by auto
-  then have \<open>fst(x) = 0 \<or> (\<exists>y. fst(x) = succ(y))\<close>
-  proof (rule natE)
-    show \<open>fst(x) = 0 \<Longrightarrow>
-    fst(x) = 0 \<or> (\<exists>y. fst(x) = succ(y))\<close>
-      by auto
-  next
-    show \<open>\<And>xa. xa \<in> nat \<Longrightarrow>
-          fst(x) = succ(xa) \<Longrightarrow>
-          fst(x) = 0 \<or>
-          (\<exists>y. fst(x) = succ(y))\<close>
-      by auto
-  qed
-
-  show \<open>x \<in> t\<close>
-  proof (rule natE[OF J])
-    assume K:\<open>fst(x)=0\<close>
-(*Pair_fst_snd_eq
-(simp only: Pi_iff)
-apply_iff
-*)
-    from J0 have M:\<open>x=<fst(x),snd(x)>\<close>
-      by auto
-    from K and M have M:\<open>x=<0,snd(x)>\<close> by auto
-    (*from H01 have \<open>snd(x) = a\<close> 
-      sorry*)
-    from H00 and H01 have P1:\<open><0, a>\<in>f\<close>
-      by (simp add: apply_iff)
-    from H10 and H11 have P2:\<open><0, a>\<in>t\<close>
-      by (simp add: apply_iff)
+  from H1 have H12:\<open>\<forall>n \<in> nat. (t`(succ(n))) = (g ` (<(t`n), n>))\<close> by (unfold satpc_def, auto)
+  from H1 have H11:\<open>t ` 0 = a\<close> by auto
+  from H1 have H10:\<open>t \<in> nat -> A\<close> by auto
+  show \<open>f=t\<close>
+  proof (rule fun_extension[OF H00 H10])
+    fix x
+    assume K: \<open>x \<in> nat\<close>
+    show \<open>(f ` x) = (t ` x)\<close>
 (*
-apply_equality: "[| <a,b>: f;  f \<in> Pi(A,B) |] ==> f`a = b"
-apply_equality2
+lemma nat_induct [case_names 0 succ, induct set: nat]:
+    "[| n \<in> nat;  P(0);  !!x. [| x \<in> nat;  P(x) |] ==> P(succ(x)) |] ==> P(n)"
 *)
-    from H2 and M have TYU:\<open><0,snd(x)>\<in>f\<close> by auto
-    from TYU and P1 and H00 have EW:\<open>snd(x) = a\<close> by (rule apply_equality2)
-    from EW and M have TY:\<open>x=<0, a>\<close> by auto
-    from TY and P2 show \<open>x \<in> t\<close> by auto
-  next
-    fix n
-    assume L1:\<open>n\<in>nat\<close>
-    assume L2:\<open>fst(x) = succ(n)\<close>
-    from H1 have H13:\<open>satpc(t, nat, g)\<close> by auto
-    from H13 have H13:\<open>\<forall>n \<in> nat . (t`(succ(n))) = (g ` (<(t`n), n>))\<close> by (unfold satpc_def)
-    have Y:\<open>(t`(succ(n))) = (g ` (<(t`n), n>))\<close> 
-      by (rule bspec[OF H13 L1])
-    have RI:\<open>succ(n)\<in>nat\<close>
-      sorry
-    from RI and Y have \<open><(succ(n)), (g ` (<(t`n), n>))>\<in>t\<close>
-    (*proof (simp add: apply_iff)*)
-      sorry
-    show \<open>x \<in> t\<close>
-      sorry
+(*    proof(induct x rule: nat_induct) *)
+    proof(rule nat_induct[of x])
+      show \<open>x \<in> nat\<close> by (rule K)
+    next
+      from H01 and H11 show \<open>f ` 0 = t ` 0\<close>
+        by auto
+    next
+      fix x
+      assume A:\<open>x\<in>nat\<close>
+      assume B:\<open>f`x = t`x\<close>
+      show \<open>f ` succ(x) = t ` succ(x)\<close>
+      proof -
+        from H02 and A have H02':\<open>f`succ(x) = g ` <(f`x), x>\<close> 
+          by (rule bspec)
+        from H12 and A have H12':\<open>t`succ(x) = g ` <(t`x), x>\<close> 
+          by (rule bspec)
+        from B and H12' have H12'':\<open>t`succ(x) = g ` <(f`x), x>\<close> by auto
+        from H12'' and H02' show \<open>f ` succ(x) = t ` succ(x)\<close> by auto
+      qed
+    qed
   qed
-  (*show \<open>\<And>f y x.
-       f \<in> nat -> A \<and>
-       f ` 0 = a \<and> satpc(f, nat, a, g) \<Longrightarrow>
-       y \<in> nat -> A \<and>
-       y ` 0 = a \<and> satpc(y, nat, a, g) \<Longrightarrow>
-       x \<in> f \<Longrightarrow> x \<in> y\<close>
-    sorry*)
 qed
 
 theorem recursion:
@@ -177,30 +141,8 @@ next
            y ` 0 = a \<and>
            satpc(y, nat, g) \<Longrightarrow>
            f = y\<close>
-  proof
-    show \<open> \<And>f y. f \<in> nat -> A \<and>
-           f ` 0 = a \<and>
-           satpc(f, nat, g) \<Longrightarrow>
-           y \<in> nat -> A \<and>
-           y ` 0 = a \<and>
-           satpc(y, nat, g) \<Longrightarrow>
-           f \<subseteq> y\<close>
-      by (rule requniqlem)
-  next
-    show \<open>\<And>f y. f \<in> nat -> A \<and>
-           f ` 0 = a \<and>
-           satpc(f, nat, g) \<Longrightarrow>
-           y \<in> nat -> A \<and>
-           y ` 0 = a \<and>
-           satpc(y, nat, g) \<Longrightarrow>
-           y \<subseteq> f\<close>
-      by (rule requniqlem)
-  qed
+    by (rule recuniq)
 qed
-
-
-
-
 
 definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ else _\<close>)
   where "fite(A, \<phi>, a, b) == \<Union>{x\<in>A.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
