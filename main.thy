@@ -2,7 +2,7 @@ theory main imports ZF
 begin
 (* Main aim is to prove Recursion Theorem *)
 
-(* 1. Union of compatible set of functions is function*)
+(* 1. Union of compatible set of functions is a function. *)
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
   where "compat(f1,f2) == \<forall>x\<in>(domain(f1)\<inter>domain(f2)).
 \<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
@@ -76,14 +76,33 @@ definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
   where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
                             
 (* m-step computation based on a and g *)
-definition partcomp :: \<open>[i,i,i,i,i]=>o\<close>
-  where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and>
-(t`0=a) \<and> satpc(t,succ(m),g)\<close>
+definition partcomp :: \<open>[i,i,i,i,i]\<Rightarrow>o\<close>
+  where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,succ(m),g)\<close>
 
 (* F *)
 definition pcs :: \<open>[i,i,i]\<Rightarrow>i\<close>
   where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
 
+lemma pcs_lem : \<open>compatset(pcs(A, a, g))\<close>
+proof (unfold compatset_def)
+  show \<open>\<forall>f1\<in>pcs(A, a, g). \<forall>f2\<in>pcs(A, a, g). compat(f1, f2)\<close>
+  proof(rule ballI, rule ballI)
+    fix f1 f2
+    assume H1:\<open>f1 \<in> pcs(A, a, g)\<close>
+    then have H1':\<open>f1 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
+    (*(t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,succ(m),g)*)
+    assume H2:\<open>f2 \<in> pcs(A, a, g)\<close>
+    show \<open>compat(f1, f2)\<close>
+    proof(unfold compat_def, rule ballI, rule allI, rule allI, rule impI)
+      fix x y1 y2
+      assume \<open>x \<in> domain(f1) \<inter> domain(f2)\<close>
+      assume \<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2\<close>
+      show \<open>y1 = y2\<close>
+        sorry
+    qed
+  qed
+qed
+ (* apply (unfold pcs_def, unfold compatset_def)*)
 theorem fuissu : \<open>f \<in> X -> Y \<Longrightarrow> f \<subseteq> X\<times>Y\<close>
 proof
   fix w
@@ -132,10 +151,10 @@ theorem recuniq :
   fixes x
   shows \<open>f=t\<close>
 proof -
-  from H0 have H02:\<open>\<forall>n \<in> nat. (f`(succ(n))) = (g ` (<(f`n), n>))\<close> by (unfold satpc_def, auto)
+  from H0 have H02:\<open>\<forall>n \<in> nat. f`succ(n) = g ` <(f`n), n>\<close> by (unfold satpc_def, auto)
   from H0 have H01:\<open>f ` 0 = a\<close> by auto
   from H0 have H00:\<open>f \<in> nat -> A\<close> by auto
-  from H1 have H12:\<open>\<forall>n \<in> nat. (t`(succ(n))) = (g ` (<(t`n), n>))\<close> by (unfold satpc_def, auto)
+  from H1 have H12:\<open>\<forall>n \<in> nat. t`succ(n) = g ` <(t`n), n>\<close> by (unfold satpc_def, auto)
   from H1 have H11:\<open>t ` 0 = a\<close> by auto
   from H1 have H10:\<open>t \<in> nat -> A\<close> by auto
   show \<open>f=t\<close>
@@ -169,12 +188,32 @@ lemma nat_induct [case_names 0 succ, induct set: nat]:
     qed
   qed
 qed
+(*
+context k_partial_order
+begin
+end
+*)
+locale rec_thm =
+  assumes H1:\<open>a \<in> A\<close>
+  assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
+begin
+
+theorem \<open>a\<in>A\<close>
+  by (rule H1)
+
+lemma reclem1 : \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A\<close>
+  sorry
+end
+
+
 
 theorem recursion:
   assumes H1:\<open>a \<in> A\<close>
   assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
   shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,g))\<close>
 proof 
+  have YOLO: \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A\<close>
+    by (rule rec_thm.reclem1[OF H1 H2])
   show \<open>\<exists>f. f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
   proof 
     show \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A \<and> (\<Union>pcs(A,a,g)) ` 0 = a \<and> satpc(\<Union>pcs(A,a,g), nat, g)\<close>
@@ -199,27 +238,13 @@ proof
               sorry (*by blast*)
           qed
         next
+          have C : \<open>compatset(pcs(A, a, g))\<close> 
+            by (rule pcs_lem)
           show \<open>function(\<Union>pcs(A, a, g))\<close>
-          proof(unfold function_def)
-            show \<open> \<forall>x y1. \<langle>x, y1\<rangle> \<in> \<Union>pcs(A, a, g) \<longrightarrow> 
-                     (\<forall>y2. \<langle>x, y2\<rangle> \<in> \<Union>pcs(A, a, g) \<longrightarrow> y1 = y2)\<close>
-            proof(rule allI, rule allI, rule impI, rule allI, rule impI)
-              fix x y1 y2
-              assume F1:\<open>\<langle>x, y1\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
-              then have M1:\<open>\<langle>x, y1\<rangle> \<in> \<Union>{t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)}\<close>
-                by (unfold pcs_def)
-              assume F2:\<open>\<langle>x, y2\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
-
-              show \<open>y1=y2\<close>
-              
-                sorry
- (*         proof(unfold pcs_def)
-            show \<open>function (\<Union>{t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)})\<close>
-              by blast*)
-            qed
-          qed
+            by (rule compatsetunionfun[OF C])
         qed
       qed
+    next
       from A1 show \<open>\<Union>pcs(A,a,g) \<in> nat -> A\<close>
       proof(fold Pi_def)
         assume \<open>\<Union>pcs(A, a, g) \<in> nat -> A\<close>
