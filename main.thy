@@ -65,17 +65,36 @@ theorem requniqlem : \<open>\<And>f y. f \<in> nat -> A \<and>
            satpc(y, nat, a, g) \<Longrightarrow>
            f \<subseteq> y\<close>
 proof
-  have \<open>fst(x) \<in> nat\<close>
+  fix f
+  assume H0:\<open>f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, a, g)\<close>
+  fix y
+  assume H1:\<open>y \<in> nat -> A \<and> y ` 0 = a \<and> satpc(y, nat, a, g)\<close>
+  fix x
+  assume H2:\<open>x \<in> f\<close>
+(*
+f \<in> nat -> A
+f\<in>Pow(Sigma(nat,\<lambda>_.A)) ==== f \<in> Pow(nat \<times> A)
+f\<subseteq>Sigma(nat,\<lambda>_.A)
+*)
+  from H0 have H00:\<open>f \<in> nat -> A\<close> by auto
+  then have \<open>f\<in>{f\<in>Pow(Sigma(nat,\<lambda>_.A)). nat\<subseteq>domain(f) & function(f)}\<close> by (unfold Pi_def)
+  then have \<open>f\<in>Pow(nat \<times> A)\<close> by (rule CollectD1)
+  then have Q:\<open>f\<subseteq>nat*A\<close> by auto
+  from H2 and Q have \<open>x\<in>nat*A\<close> by auto
+  then have \<open>fst(x) \<in> nat\<close> by auto
+  then have \<open>fst(x) = 0 \<or> (\<exists>y. fst(x) = succ(y))\<close>
     sorry
-  have \<open>fst(x) = 0 \<or> (\<exists>y. fst(x) = succ(y))\<close>
+
+  show \<open>x \<in> y\<close>
     sorry
-  show \<open>\<And>f y x.
+
+  (*show \<open>\<And>f y x.
        f \<in> nat -> A \<and>
        f ` 0 = a \<and> satpc(f, nat, a, g) \<Longrightarrow>
        y \<in> nat -> A \<and>
        y ` 0 = a \<and> satpc(y, nat, a, g) \<Longrightarrow>
        x \<in> f \<Longrightarrow> x \<in> y\<close>
-    sorry
+    sorry*)
 qed
 
 theorem recursion:
