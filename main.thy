@@ -1,6 +1,12 @@
 theory main imports ZF
 begin
 (* Main aim is to prove Recursion Theorem *)
+(* 
+then prove transfinite induction & recursion
+then define Von Neumann hierarchy
+then prove V=\<Union>(\<alpha>\<in>Ord).V\<alpha>
+trying to rewrite everything without replacement
+*)
 
 (* 1. Union of compatible set of functions is a function. *)
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
@@ -194,31 +200,186 @@ begin
 end
 *)
 locale rec_thm =
+  fixes A a g
   assumes H1:\<open>a \<in> A\<close>
   assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
 begin
 
-theorem \<open>a\<in>A\<close>
+theorem trr: \<open>a\<in>A\<close>
   by (rule H1)
 
-lemma reclem1 : \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A\<close>
+lemma l1 : \<open>\<Union>pcs(A, a, g) \<subseteq> nat \<times> A\<close>
+proof
+  fix x
+  assume H:\<open>x \<in> \<Union>pcs(A, a, g)\<close>
+  hence  H:\<open>x \<in> \<Union>{t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
+    by (unfold pcs_def)
+  show \<open>x \<in> nat \<times> A\<close>
+  proof(rule UnionE[OF H])
+    fix B
+    assume J1:\<open>x\<in>B\<close>
+    assume J2:\<open>B \<in> {t \<in> Pow(nat \<times> A) .
+            \<exists>m. partcomp(A, t, m, a, g)}\<close>
+    hence J2:\<open>B \<in> Pow(nat \<times> A)\<close> by auto
+    hence J2:\<open>B \<subseteq> nat \<times> A\<close> by auto
+    from J1 and J2 show \<open>x \<in> nat \<times> A\<close>
+      by auto
+  qed
+qed
+
+lemma le1:
+  assumes H:\<open>x\<in>1\<close>
+  shows \<open>x=0\<close>
+proof
+  show \<open>x \<subseteq> 0\<close>
+  proof
+    fix z
+    assume J:\<open>z\<in>x\<close>
+    show \<open>z\<in>0\<close>
+    proof(rule succE[OF H])
+      assume J:\<open>x\<in>0\<close>
+      show \<open>z\<in>0\<close>
+        by (rule notE[OF not_mem_empty J])
+    next
+      assume K:\<open>x=0\<close>
+      from J and K show \<open>z\<in>0\<close>
+        by auto
+    qed
+  qed
+next
+  show \<open>0 \<subseteq> x\<close> by auto
+qed
+
+lemma lsinglfun : \<open>function({\<langle>0, a\<rangle>})\<close>
   sorry
-end
 
+lemma l2': \<open>0 \<in> domain(\<Union>pcs(A, a, g))\<close>
+proof
+  show \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
+  proof
+    show \<open>\<langle>0, a\<rangle> \<in> {\<langle>0, a\<rangle>}\<close>
+      by auto
+  next
+    show \<open>{\<langle>0, a\<rangle>} \<in> pcs(A, a, g)\<close>
+    proof(unfold pcs_def)
+      show \<open>{\<langle>0, a\<rangle>} \<in> {t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)}\<close>
+      proof
+        show \<open>{\<langle>0, a\<rangle>} \<in> Pow(nat \<times> A)\<close>
+        proof(rule PowI, rule equalities.singleton_subsetI)
+          show \<open>\<langle>0, a\<rangle> \<in> nat \<times> A\<close>
+          proof
+            show \<open>0 \<in> nat\<close> by auto
+          next
+            show \<open>a \<in> A\<close> by (rule H1)
+          qed
+        qed
+      next
+        show \<open>\<exists>m. partcomp(A, {\<langle>0, a\<rangle>}, m, a, g)\<close>
+        proof
+          show \<open>partcomp(A, {\<langle>0, a\<rangle>}, 0, a, g)\<close>
+          proof(unfold partcomp_def)
+            show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A \<and> {\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 1, g)\<close>
+            proof
+              show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A\<close>
+              proof (unfold Pi_def)
+                show \<open>{\<langle>0, a\<rangle>} \<in> {f \<in> Pow(1 \<times> A) . 1 \<subseteq> domain(f) \<and> function(f)}\<close>
+                proof
+                  show \<open>{\<langle>0, a\<rangle>} \<in> Pow(1 \<times> A)\<close>
+                  proof(rule PowI, rule equalities.singleton_subsetI)
+                    show \<open>\<langle>0, a\<rangle> \<in> 1 \<times> A\<close>
+                    proof
+                      show \<open>0 \<in> 1\<close> by auto
+                    next
+                      show \<open>a \<in> A\<close> by (rule H1)
+                    qed
+                  qed
+                next
+                  show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>}) \<and> function({\<langle>0, a\<rangle>})\<close>
+                  proof 
+                    show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>})\<close>
+                    proof
+                      fix x
+                      assume W:\<open>x\<in>1\<close>
+                      from W have W:\<open>x=0\<close> by (rule le1)
+                      have Y:\<open>0\<in>domain({\<langle>0, a\<rangle>})\<close>
+                        sorry
+                      from W and Y 
+                      show \<open>x\<in>domain({\<langle>0, a\<rangle>})\<close>
+                        by auto
+                    qed
+                  next
+                    show \<open>function({\<langle>0, a\<rangle>})\<close>
+                      by (rule lsinglfun)
+                  qed
+                qed
+              qed
+              show \<open>{\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 1, g)\<close>
+              proof
+                show \<open>{\<langle>0, a\<rangle>} ` 0 = a\<close>
+                  sorry
+              next
+                show \<open>satpc({\<langle>0, a\<rangle>}, 1, g)\<close>
+                  sorry
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
 
+lemma l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
+proof
+  fix x
+  assume G:\<open>x\<in>nat\<close>
+  show \<open>x \<in> domain(\<Union>pcs(A, a, g))\<close>
+  proof(rule nat_induct[of x])
+    show \<open>x\<in>nat\<close> by (rule G)
+  next
+    fix x
+    assume Q1:\<open>x\<in>nat\<close>
+    assume Q2:\<open>x\<in>domain(\<Union>pcs(A, a, g))\<close>
+    show \<open>succ(x)\<in>domain(\<Union>pcs(A, a, g))\<close>
+      sorry
+  next
+    show \<open>0 \<in> domain(\<Union>pcs(A, a, g))\<close>
+      sorry
+  qed
+qed
 
-theorem recursion:
-  assumes H1:\<open>a \<in> A\<close>
-  assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
-  shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,g))\<close>
-proof 
-  have YOLO: \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A\<close>
-    by (rule rec_thm.reclem1[OF H1 H2])
-  show \<open>\<exists>f. f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
-  proof 
-    show \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A \<and> (\<Union>pcs(A,a,g)) ` 0 = a \<and> satpc(\<Union>pcs(A,a,g), nat, g)\<close>
+lemma l3:\<open>function(\<Union>pcs(A, a, g))\<close>
+  sorry
+
+lemma l4 : \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A\<close>
+proof(unfold Pi_def)
+  show \<open> \<Union>pcs(A, a, g) \<in> {f \<in> Pow(nat \<times> A) . nat \<subseteq> domain(f) \<and> function(f)}\<close>
+  proof
+    show \<open>\<Union>pcs(A, a, g) \<in> Pow(nat \<times> A)\<close>
+    proof 
+      show \<open>\<Union>pcs(A, a, g) \<subseteq> nat \<times> A\<close>
+        by (rule l1)
+    qed
+  next 
+    show \<open>nat \<subseteq> domain(\<Union>pcs(A, a, g)) \<and> function(\<Union>pcs(A, a, g))\<close>
     proof
-      have A1:\<open>\<Union>pcs(A,a,g)\<in>{f\<in>Pow(nat*A). nat\<subseteq>domain(f) & function(f)}\<close>
+      show \<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
+        by (rule l2)
+    next
+      show \<open>function(\<Union>pcs(A, a, g))\<close>
+        by (rule l3)
+    qed
+  qed
+qed
+
+lemma l5: \<open>(\<Union>pcs(A, a, g)) ` 0 = a\<close>
+  sorry
+
+lemma l6: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
+  sorry
+
+(*
+        have A1:\<open>\<Union>pcs(A,a,g)\<in>{f\<in>Pow(nat*A). nat\<subseteq>domain(f) & function(f)}\<close>
       proof 
         show \<open>\<Union>pcs(A, a, g) \<in> Pow(nat \<times> A)\<close>
         proof 
@@ -262,6 +423,28 @@ proof
       qed
     qed
   qed
+*)
+
+theorem recursion:
+  shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,g))\<close>
+proof 
+  show \<open>\<exists>f. f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
+  proof 
+    show \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A \<and> (\<Union>pcs(A,a,g)) ` 0 = a \<and> satpc(\<Union>pcs(A,a,g), nat, g)\<close>
+    proof
+      show \<open>\<Union>pcs(A, a, g) \<in> nat -> A\<close>
+        by (rule l4)
+    next
+      show \<open>(\<Union>pcs(A, a, g)) ` 0 = a \<and> satpc(\<Union>pcs(A, a, g), nat, g)\<close>
+      proof 
+        show \<open>(\<Union>pcs(A, a, g)) ` 0 = a\<close>
+          by (rule l5)
+      next
+        show \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
+          by (rule l6)
+      qed
+    qed
+  qed
 next
   show \<open>\<And>f y. f \<in> nat -> A \<and>
            f ` 0 = a \<and>
@@ -272,6 +455,16 @@ next
            f = y\<close>
     by (rule recuniq)
 qed
+
+end
+
+
+theorem \<open>a\<in>A \<Longrightarrow> a\<in>A\<close>
+proof (rule rec_thm.trr)
+  show \<open>a \<in> A \<Longrightarrow> rec_thm(A,a,g)\<close>
+  proof (unfold rec_thm_def)
+    oops
+
 
 definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ else _\<close>)
   where "fite(A, \<phi>, a, b) == \<Union>{x\<in>A.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
