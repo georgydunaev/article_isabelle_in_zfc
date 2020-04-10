@@ -8,7 +8,56 @@ then prove V=\<Union>(\<alpha>\<in>Ord).V\<alpha>
 trying to rewrite everything without replacement
 *)
 
-(* 1. Union of compatible set of functions is a function. *)
+(* Natural numbers are linearly ordered. *)
+
+theorem \<open>\<forall>n\<in>nat. 0\<in>n\<or>0=n\<close>
+proof(rule ballI)
+  fix n
+  assume H1:\<open>n\<in>nat\<close>
+  show \<open>0\<in>n\<or>0=n\<close>          
+  proof(rule nat_induct[of n])
+    from H1 show \<open>n \<in> nat\<close> by assumption
+  next
+    show \<open>0 \<in> 0 \<or> 0 = 0\<close> by (rule disjI2, rule refl) 
+  next
+    fix x
+    assume H2:\<open>x\<in>nat\<close>
+    assume H3:\<open> 0 \<in> x \<or> 0 = x\<close>
+  proof
+  qed
+    show \<open>0 \<in> succ(x) \<or> 0 = succ(x)\<close>
+    proof(rule disjE[OF H3])
+      show \<open>0 \<in> succ(x) \<or> 0 = succ(x)\<close>
+    proof(rule disjI1)
+      show \<open>0 \<in> succ(x)\<close>
+      proof(rule succI2)
+      qed
+qed
+
+theorem nat_linord:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<in>n\<or>m=n\<or>n\<in>m\<close>
+proof(rule ballI)
+  fix n
+  assume H1:\<open>n\<in>nat\<close>
+  show \<open>\<forall>m\<in>nat. m \<in> n \<or> m = n \<or> n \<in> m\<close>
+  proof(rule nat_induct[of n])
+    from H1 show \<open>n\<in>nat\<close> by assumption
+  next
+    show \<open>\<forall>m\<in>nat. m \<in> 0 \<or> m = 0 \<or> 0 \<in> m\<close>
+      sorry
+  next
+    fix x
+    assume \<open>x\<in>nat\<close>
+    assume M:\<open>\<forall>m\<in>nat. m \<in> x \<or> m = x \<or> x \<in> m\<close>
+    show \<open>\<forall>m\<in>nat.
+            m \<in> succ(x) \<or>
+            m = succ(x) \<or>
+            succ(x) \<in> m\<close>
+      sorry
+  qed
+qed
+
+
+(* Union of compatible set of functions is a function. *)
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
   where "compat(f1,f2) == \<forall>x\<in>(domain(f1)\<inter>domain(f2)).
 \<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
@@ -76,6 +125,9 @@ proof(unfold function_def)
     qed
   qed
 qed
+
+(* Natural numbers are linearly ordered by \<in> *)
+
 
 (* *. Recursion theorem *)
 definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
