@@ -187,6 +187,35 @@ next
   qed
 qed
 
+theorem le_succ : \<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<in>n \<longrightarrow> succ(m)\<in>succ(n)\<close>
+proof(rule nat_induct_bound)
+  show \<open>\<forall>m\<in>nat. m \<in> 0 \<longrightarrow> succ(m) \<in> 1\<close>
+    by auto
+next
+  fix x
+  assume H0:\<open>x\<in>nat\<close>
+  assume H1:\<open>\<forall>m\<in>nat. m \<in> x \<longrightarrow> succ(m) \<in> succ(x)\<close>
+  show \<open> \<forall>m\<in>nat. m \<in> succ(x) \<longrightarrow>
+            succ(m) \<in> succ(succ(x))\<close>
+  proof(rule ballI, rule impI)
+    fix m
+    assume HR0:\<open>m\<in>nat\<close>
+    assume HR1:\<open>m\<in>succ(x)\<close>
+    show \<open>succ(m) \<in> succ(succ(x))\<close>
+    proof(rule succE[OF HR1])
+      assume Q:\<open>m = x\<close>
+      from Q show \<open>succ(m) \<in> succ(succ(x))\<close>
+        by auto
+    next
+      assume Q:\<open>m \<in> x\<close>
+      have Q:\<open>succ(m) \<in> succ(x)\<close>
+        by (rule mp[OF bspec[OF H1 HR0] Q])
+      from Q show \<open>succ(m) \<in> succ(succ(x))\<close>
+        by (rule succI2)
+    qed
+  qed
+qed
+
 theorem nat_linord:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<in>n\<or>m=n\<or>n\<in>m\<close>
 proof(rule ballI)
   fix n
@@ -232,7 +261,21 @@ proof(rule ballI)
         show \<open>succ(y) \<in> succ(x) \<or>
               succ(y) = succ(x) \<or>
               succ(x) \<in> succ(y)\<close>
-          sorry
+        proof(rule succE[OF W])
+          assume G:\<open>y=x\<close>
+          show \<open>succ(y) \<in> succ(x) \<or>
+    succ(y) = succ(x) \<or>
+    succ(x) \<in> succ(y)\<close>
+            by (rule disjI2, rule disjI1, rule subst[OF G], rule refl)
+        next
+          assume G:\<open>y \<in> x\<close>
+          have R:\<open>succ(y) \<in> succ(x)\<close>
+            by (rule mp[OF bspec[OF bspec[OF le_succ K] H0] G])
+          show \<open>succ(y) \<in> succ(x) \<or>
+           succ(y) = succ(x) \<or>
+           succ(x) \<in> succ(y)\<close>
+            by(rule disjI1, rule R)
+        qed
       next
         assume W:\<open>y = succ(x) \<or> succ(x) \<in> y\<close>
         show \<open>succ(y) \<in> succ(x) \<or>
@@ -243,13 +286,13 @@ proof(rule ballI)
           show \<open>succ(y) \<in> succ(x) \<or>
               succ(y) = succ(x) \<or>
               succ(x) \<in> succ(y)\<close>
-            sorry
+            by (rule disjI2, rule disjI2, rule subst[OF W], rule succI1)
         next
           assume W:\<open>succ(x)\<in>y\<close>
           show \<open>succ(y) \<in> succ(x) \<or>
               succ(y) = succ(x) \<or>
               succ(x) \<in> succ(y)\<close>
-            sorry
+            by (rule disjI2, rule disjI2, rule succI2[OF W])
         qed
       qed
     qed
