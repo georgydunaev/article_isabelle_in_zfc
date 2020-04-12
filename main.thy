@@ -302,8 +302,9 @@ qed
 
 (* Union of compatible set of functions is a function. *)
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
-  where "compat(f1,f2) == \<forall>x\<in>(domain(f1)\<inter>domain(f2)).
-\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
+  where "compat(f1,f2) == \<forall>x.\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
+
+(*\<in>(domain(f1)\<inter>domain(f2))*)
 
 definition compatset :: \<open>i\<Rightarrow>o\<close>
   where "compatset(S) == \<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)" 
@@ -354,13 +355,10 @@ proof(unfold function_def)
       assume K2:\<open>f2 \<in> S\<close>
       have R:\<open>\<forall>f2 \<in> S. compat(f1,f2)\<close> by (rule bspec[OF H0 K1])
       have R:\<open>compat(f1,f2)\<close> by (rule bspec[OF R K2])
-      from R have R:\<open>\<forall>x\<in>(domain(f1)\<inter>domain(f2)).
+      from R have R:\<open>\<forall>x.
         \<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (unfold compat_def)
       find_theorems "_\<Longrightarrow>_\<in> domain(_)"
-      from J1 have Y1:\<open>x \<in> domain(f1)\<close> by (rule equalities.domainI)
-      from J2 have Y2:\<open>x \<in> domain(f2)\<close> by (rule equalities.domainI)
-      from Y1 and Y2 have Y: \<open>x \<in> domain(f1)\<inter>domain(f2)\<close> by (rule IntI)
-      have R:\<open>\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule bspec[OF R Y])
+      have R:\<open>\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule spec[OF R])
       have R:\<open>\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule spec[OF R])
       have R:\<open>\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule spec[OF R])
       from J1 and J2 have J:\<open>\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2\<close> by (rule conjI)
@@ -394,9 +392,8 @@ proof (unfold compatset_def)
     (*(t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,succ(m),g)*)
     assume H2:\<open>f2 \<in> pcs(A, a, g)\<close>
     show \<open>compat(f1, f2)\<close>
-    proof(unfold compat_def, rule ballI, rule allI, rule allI, rule impI)
+    proof(unfold compat_def, rule allI, rule allI, rule allI, rule impI)
       fix x y1 y2
-      assume \<open>x \<in> domain(f1) \<inter> domain(f2)\<close>
       assume \<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2\<close>
       show \<open>y1 = y2\<close>
         sorry
