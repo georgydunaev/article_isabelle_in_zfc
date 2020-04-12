@@ -112,6 +112,81 @@ next
   qed
 qed
 
+theorem nat_xninx : \<open>\<forall>n\<in>nat. \<not>(n\<in>n)\<close>
+proof(rule nat_induct_bound)
+  show \<open>0\<notin>0\<close>
+    by auto
+next
+  fix x
+  assume H0:\<open>x\<in>nat\<close>
+  then have H0':\<open>succ(x)\<in>nat\<close> by auto
+  assume H1:\<open>x\<notin>x\<close>
+  show \<open>succ(x) \<notin> succ(x)\<close>
+  proof(rule contrapos[OF H1])
+    assume Q:\<open>succ(x) \<in> succ(x)\<close>
+    have D:\<open>succ(x)\<in>x \<or> succ(x)=x\<close>
+      by (rule JH2_1ii[OF Q])
+    show \<open>x\<in>x\<close>
+    proof(rule disjE[OF D])
+      assume Y1:\<open>succ(x)\<in>x\<close>
+      have U:\<open>x\<in>succ(x)\<close> by (rule succI1)
+(*
+      have T:\<open>\<forall>k\<in>nat. \<forall>m\<in>nat. k \<in> m \<and> m \<in> x \<longrightarrow> k \<in> x\<close> 
+        by (rule bspec[OF nat_transitive H0])
+      have T:\<open>\<forall>m\<in>nat. x \<in> m \<and> m \<in> x \<longrightarrow> x \<in> x\<close>
+        by (rule bspec[OF T H0])
+      have T:\<open>x \<in> succ(x) \<and> succ(x) \<in> x \<longrightarrow> x \<in> x\<close>
+        by (rule bspec[OF T H0'])
+*)
+      have T:\<open>x \<in> succ(x) \<and> succ(x) \<in> x \<longrightarrow> x \<in> x\<close>
+        by (rule bspec[OF bspec[OF bspec[OF nat_transitive H0] H0] H0'])
+      have R:\<open>x \<in> succ(x) \<and> succ(x) \<in> x\<close>
+        by (rule conjI[OF U Y1])
+      show \<open>x\<in>x\<close> 
+        by (rule mp[OF T R])
+    next
+      assume Y1:\<open>succ(x)=x\<close>
+      (*have U:\<open>x\<in>succ(x)\<close> by (rule succI1)
+      from Y1 and U show \<open>x\<in>x\<close> 
+        by auto
+      from Y1 have Y1_r:\<open>x=succ(x)\<close> by (rule sym)*)
+      show \<open>x\<in>x\<close> 
+        by (rule subst[OF Y1], rule Q)
+    qed
+  qed
+qed
+
+theorem nat_asym : \<open>\<forall>n\<in>nat. \<forall>m\<in>nat. \<not>(n\<in>m \<and> m\<in>n)\<close>
+proof(rule ballI, rule ballI)
+  fix n m
+  assume H0:\<open>n \<in> nat\<close>
+  assume H1:\<open>m \<in> nat\<close>
+  have Q:\<open>\<not>(n\<in>n)\<close>
+    by(rule bspec[OF nat_xninx H0])
+  show \<open>\<not> (n \<in> m \<and> m \<in> n)\<close>
+  proof(rule contrapos[OF Q])
+    assume W:\<open>(n \<in> m \<and> m \<in> n)\<close>
+    show \<open>n\<in>n\<close>
+      by (rule mp[OF bspec[OF bspec[OF bspec[OF nat_transitive H0] H0] H1] W])
+  qed
+qed
+
+theorem zerolesucc :\<open>\<forall>n\<in>nat. 0 \<in> succ(n)\<close>
+proof(rule nat_induct_bound)
+  show \<open>0\<in>1\<close>
+    by auto
+next
+  fix x
+  assume H0:\<open>x\<in>nat\<close>
+  assume H1:\<open>0\<in>succ(x)\<close>
+  show \<open>0\<in>succ(succ(x))\<close>
+  proof
+    assume J:\<open>0 \<notin> succ(x)\<close>
+    show \<open>0 = succ(x)\<close>
+      by(rule notE[OF J H1])
+  qed
+qed
+
 theorem nat_linord:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<in>n\<or>m=n\<or>n\<in>m\<close>
 proof(rule ballI)
   fix n
@@ -133,13 +208,51 @@ proof(rule ballI)
     qed
   next
     fix x
-    assume \<open>x\<in>nat\<close>
+    assume K:\<open>x\<in>nat\<close>
     assume M:\<open>\<forall>m\<in>nat. m \<in> x \<or> m = x \<or> x \<in> m\<close>
     show \<open>\<forall>m\<in>nat.
             m \<in> succ(x) \<or>
             m = succ(x) \<or>
             succ(x) \<in> m\<close>
-      sorry
+    proof(rule nat_induct_bound)
+      show \<open>0 \<in> succ(x) \<or>  0 = succ(x) \<or> succ(x) \<in> 0\<close>
+      proof(rule disjI1)
+        show \<open>0 \<in> succ(x)\<close>
+          by (rule bspec[OF zerolesucc K])
+      qed
+    next
+      fix y
+      assume H0:\<open>y \<in> nat\<close>
+      assume H1:\<open>y \<in> succ(x) \<or> y = succ(x) \<or> succ(x) \<in> y\<close>
+      show \<open>succ(y) \<in> succ(x) \<or>
+            succ(y) = succ(x) \<or>
+            succ(x) \<in> succ(y)\<close>
+      proof(rule disjE[OF H1])
+        assume W:\<open>y\<in>succ(x)\<close>
+        show \<open>succ(y) \<in> succ(x) \<or>
+              succ(y) = succ(x) \<or>
+              succ(x) \<in> succ(y)\<close>
+          sorry
+      next
+        assume W:\<open>y = succ(x) \<or> succ(x) \<in> y\<close>
+        show \<open>succ(y) \<in> succ(x) \<or>
+              succ(y) = succ(x) \<or>
+              succ(x) \<in> succ(y)\<close>
+        proof(rule disjE[OF W])
+          assume W:\<open>y=succ(x)\<close>
+          show \<open>succ(y) \<in> succ(x) \<or>
+              succ(y) = succ(x) \<or>
+              succ(x) \<in> succ(y)\<close>
+            sorry
+        next
+          assume W:\<open>succ(x)\<in>y\<close>
+          show \<open>succ(y) \<in> succ(x) \<or>
+              succ(y) = succ(x) \<or>
+              succ(x) \<in> succ(y)\<close>
+            sorry
+        qed
+      qed
+    qed
   qed
 qed
 
