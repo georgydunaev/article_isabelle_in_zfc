@@ -10,7 +10,7 @@ trying to rewrite everything without replacement
 
 (* Natural numbers are linearly ordered. *)
 
-theorem \<open>\<forall>n\<in>nat. 0\<in>n\<or>0=n\<close>
+theorem zeroleq : \<open>\<forall>n\<in>nat. 0\<in>n\<or>0=n\<close>
 proof(rule ballI)
   fix n
   assume H1:\<open>n\<in>nat\<close>
@@ -23,15 +23,93 @@ proof(rule ballI)
     fix x
     assume H2:\<open>x\<in>nat\<close>
     assume H3:\<open> 0 \<in> x \<or> 0 = x\<close>
-  proof
-  qed
     show \<open>0 \<in> succ(x) \<or> 0 = succ(x)\<close>
     proof(rule disjE[OF H3])
+      assume H4:\<open>0\<in>x\<close>
       show \<open>0 \<in> succ(x) \<or> 0 = succ(x)\<close>
-    proof(rule disjI1)
-      show \<open>0 \<in> succ(x)\<close>
-      proof(rule succI2)
+      proof(rule disjI1)
+        show \<open>0 \<in> succ(x)\<close>
+          by (rule succI2[OF H4])
       qed
+    next
+      assume H4:\<open>0=x\<close>
+      show \<open>0 \<in> succ(x) \<or> 0 = succ(x)\<close>
+      proof(rule disjI1)
+        have q:\<open>x \<in> succ(x)\<close> by auto
+        from q and H4 show \<open>0 \<in> succ(x)\<close> by auto
+      qed
+    qed
+  qed
+qed
+
+theorem JH2_1ii : \<open>m\<in>succ(n) \<Longrightarrow> m\<in>n\<or>m=n\<close>
+  by auto
+
+theorem nat_induct_bound : 
+  assumes H0:\<open>P(0)\<close>
+  assumes H1:\<open>!!x. x\<in>nat \<Longrightarrow> P(x) \<Longrightarrow> P(succ(x))\<close>
+  shows \<open>\<forall>n\<in>nat. P(n)\<close>
+proof(rule ballI)
+  fix n
+  assume H2:\<open>n\<in>nat\<close>
+  show \<open>P(n)\<close>
+  proof(rule nat_induct[of n])
+    from H2 show \<open>n\<in>nat\<close> by assumption
+  next
+    show \<open>P(0)\<close> by (rule H0)
+  next
+    fix x
+    assume H3:\<open>x\<in>nat\<close>
+    assume H4:\<open>P(x)\<close>
+    show \<open>P(succ(x))\<close> by (rule H1[OF H3 H4])
+  qed
+qed
+
+theorem nat_transitive:\<open>\<forall>n\<in>nat. \<forall>k\<in>nat. \<forall>m\<in>nat.  k \<in> m \<and> m \<in> n \<longrightarrow> k \<in> n\<close>
+proof(rule nat_induct_bound)
+  show \<open>\<forall>k\<in>nat. \<forall>m\<in>nat. k \<in> m \<and> m \<in> 0 \<longrightarrow> k \<in> 0\<close>
+  proof(rule ballI, rule ballI, rule impI)
+    fix k m
+    assume H:\<open>k \<in> m \<and> m \<in> 0\<close>
+    then have H:\<open>m \<in> 0\<close> by auto 
+    then show \<open>k \<in> 0\<close> by auto
+  qed
+next
+  fix n
+  assume H0:\<open>n \<in> nat\<close>
+  assume H1:\<open>\<forall>k\<in>nat.
+            \<forall>m\<in>nat.
+               k \<in> m \<and> m \<in> n \<longrightarrow>
+               k \<in> n\<close>
+  show \<open>\<forall>k\<in>nat.\<forall>m\<in>nat.
+               k \<in> m \<and>
+               m \<in> succ(n) \<longrightarrow>
+               k \<in> succ(n)\<close>
+  proof(rule ballI, rule ballI, rule impI)
+    fix k m
+    assume H2:\<open>k \<in> nat\<close>
+    assume H3:\<open>m \<in> nat\<close>
+    assume H4:\<open>k \<in> m \<and> m \<in> succ(n)\<close>
+    hence H4':\<open>m \<in> succ(n)\<close> by (rule conjunct2)
+    hence H4'':\<open>m\<in>n \<or> m=n\<close> by (rule succE, auto)
+    from H4 have Q:\<open>k \<in> m\<close> by (rule conjunct1)
+    have H1S:\<open>\<forall>m\<in>nat. k \<in> m \<and> m \<in> n \<longrightarrow> k \<in> n\<close>
+      by (rule bspec[OF H1 H2])
+    have H1S:\<open>k \<in> m \<and> m \<in> n \<longrightarrow> k \<in> n\<close> 
+      by (rule bspec[OF H1S H3])
+    show \<open>k \<in> succ(n)\<close>
+    proof(rule disjE[OF H4''])
+      assume L:\<open>m\<in>n\<close>
+      from Q and L have QL:\<open>k \<in> m \<and> m \<in> n\<close> by auto
+      have G:\<open>k \<in> n\<close> by (rule mp [OF H1S QL])
+      show \<open>k \<in> succ(n)\<close>
+        by (rule succI2[OF G])
+    next
+      assume L:\<open>m=n\<close>
+      from Q have F:\<open>k \<in> succ(m)\<close> by auto
+      from L and Q show \<open>k \<in> succ(n)\<close> by auto
+    qed
+  qed
 qed
 
 theorem nat_linord:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<in>n\<or>m=n\<or>n\<in>m\<close>
@@ -43,7 +121,16 @@ proof(rule ballI)
     from H1 show \<open>n\<in>nat\<close> by assumption
   next
     show \<open>\<forall>m\<in>nat. m \<in> 0 \<or> m = 0 \<or> 0 \<in> m\<close>
-      sorry
+    proof 
+      fix m
+      assume J:\<open>m\<in>nat\<close>
+      show \<open> m \<in> 0 \<or> m = 0 \<or> 0 \<in> m\<close>
+      proof(rule disjI2)
+        have Q:\<open>0\<in>m\<or>0=m\<close> by (rule bspec[OF zeroleq J])
+        show \<open>m = 0 \<or> 0 \<in> m\<close>
+          by (rule disjE[OF Q], auto)
+      qed
+    qed
   next
     fix x
     assume \<open>x\<in>nat\<close>
