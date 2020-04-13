@@ -65,10 +65,10 @@ proof(rule ballI)
   qed
 qed
 
-theorem nat_transitive:\<open>\<forall>n\<in>nat. \<forall>k\<in>nat. \<forall>m\<in>nat.  k \<in> m \<and> m \<in> n \<longrightarrow> k \<in> n\<close>
+theorem nat_transitive:\<open>\<forall>n\<in>nat. \<forall>k. \<forall>m.  k \<in> m \<and> m \<in> n \<longrightarrow> k \<in> n\<close>
 proof(rule nat_induct_bound)
-  show \<open>\<forall>k\<in>nat. \<forall>m\<in>nat. k \<in> m \<and> m \<in> 0 \<longrightarrow> k \<in> 0\<close>
-  proof(rule ballI, rule ballI, rule impI)
+  show \<open>\<forall>k. \<forall>m. k \<in> m \<and> m \<in> 0 \<longrightarrow> k \<in> 0\<close>
+  proof(rule allI, rule allI, rule impI)
     fix k m
     assume H:\<open>k \<in> m \<and> m \<in> 0\<close>
     then have H:\<open>m \<in> 0\<close> by auto 
@@ -77,26 +77,26 @@ proof(rule nat_induct_bound)
 next
   fix n
   assume H0:\<open>n \<in> nat\<close>
-  assume H1:\<open>\<forall>k\<in>nat.
-            \<forall>m\<in>nat.
+  assume H1:\<open>\<forall>k.
+            \<forall>m.
                k \<in> m \<and> m \<in> n \<longrightarrow>
                k \<in> n\<close>
-  show \<open>\<forall>k\<in>nat.\<forall>m\<in>nat.
+  show \<open>\<forall>k. \<forall>m.
                k \<in> m \<and>
                m \<in> succ(n) \<longrightarrow>
                k \<in> succ(n)\<close>
-  proof(rule ballI, rule ballI, rule impI)
+  proof(rule allI, rule allI, rule impI)
     fix k m
-    assume H2:\<open>k \<in> nat\<close>
-    assume H3:\<open>m \<in> nat\<close>
+(*    assume H2:\<open>k \<in> nat\<close>
+    assume H3:\<open>m \<in> nat\<close>*)
     assume H4:\<open>k \<in> m \<and> m \<in> succ(n)\<close>
     hence H4':\<open>m \<in> succ(n)\<close> by (rule conjunct2)
     hence H4'':\<open>m\<in>n \<or> m=n\<close> by (rule succE, auto)
     from H4 have Q:\<open>k \<in> m\<close> by (rule conjunct1)
-    have H1S:\<open>\<forall>m\<in>nat. k \<in> m \<and> m \<in> n \<longrightarrow> k \<in> n\<close>
-      by (rule bspec[OF H1 H2])
+    have H1S:\<open>\<forall>m. k \<in> m \<and> m \<in> n \<longrightarrow> k \<in> n\<close>
+      by (rule spec[OF H1])
     have H1S:\<open>k \<in> m \<and> m \<in> n \<longrightarrow> k \<in> n\<close> 
-      by (rule bspec[OF H1S H3])
+      by (rule spec[OF H1S])
     show \<open>k \<in> succ(n)\<close>
     proof(rule disjE[OF H4''])
       assume L:\<open>m\<in>n\<close>
@@ -119,7 +119,6 @@ proof(rule nat_induct_bound)
 next
   fix x
   assume H0:\<open>x\<in>nat\<close>
-  then have H0':\<open>succ(x)\<in>nat\<close> by auto
   assume H1:\<open>x\<notin>x\<close>
   show \<open>succ(x) \<notin> succ(x)\<close>
   proof(rule contrapos[OF H1])
@@ -139,7 +138,7 @@ next
         by (rule bspec[OF T H0'])
 *)
       have T:\<open>x \<in> succ(x) \<and> succ(x) \<in> x \<longrightarrow> x \<in> x\<close>
-        by (rule bspec[OF bspec[OF bspec[OF nat_transitive H0] H0] H0'])
+        by (rule spec[OF spec[OF bspec[OF nat_transitive H0]]])
       have R:\<open>x \<in> succ(x) \<and> succ(x) \<in> x\<close>
         by (rule conjI[OF U Y1])
       show \<open>x\<in>x\<close> 
@@ -156,18 +155,18 @@ next
   qed
 qed
 
-theorem nat_asym : \<open>\<forall>n\<in>nat. \<forall>m\<in>nat. \<not>(n\<in>m \<and> m\<in>n)\<close>
-proof(rule ballI, rule ballI)
+theorem nat_asym : \<open>\<forall>n\<in>nat. \<forall>m. \<not>(n\<in>m \<and> m\<in>n)\<close>
+proof(rule ballI, rule allI)
   fix n m
   assume H0:\<open>n \<in> nat\<close>
-  assume H1:\<open>m \<in> nat\<close>
+(*  assume H1:\<open>m \<in> nat\<close>*)
   have Q:\<open>\<not>(n\<in>n)\<close>
     by(rule bspec[OF nat_xninx H0])
   show \<open>\<not> (n \<in> m \<and> m \<in> n)\<close>
   proof(rule contrapos[OF Q])
     assume W:\<open>(n \<in> m \<and> m \<in> n)\<close>
     show \<open>n\<in>n\<close>
-      by (rule mp[OF bspec[OF bspec[OF bspec[OF nat_transitive H0] H0] H1] W])
+      by (rule mp[OF spec[OF spec[OF bspec[OF nat_transitive H0]]] W])
   qed
 qed
 
@@ -299,6 +298,18 @@ proof(rule ballI)
   qed
 qed
 
+theorem nat_elem_is_ss:\<open>\<forall>m\<in>nat. n\<in>m \<longrightarrow> n\<subseteq>m\<close>
+  sorry (**)
+
+theorem nat_ldfghj:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. n\<subseteq>m \<and> n\<noteq>m \<longrightarrow> n\<in>m\<close>
+  sorry
+(*
+do it through ordinals.
+
+*)
+
+theorem nat_linord_ss:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<subseteq>n\<or>n\<subseteq>m\<close>
+  sorry
 
 (* Union of compatible set of functions is a function. *)
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
@@ -391,12 +402,35 @@ proof (unfold compatset_def)
     then have H1':\<open>f1 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
     (*(t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,succ(m),g)*)
     assume H2:\<open>f2 \<in> pcs(A, a, g)\<close>
+    then have H2':\<open>f2 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
     show \<open>compat(f1, f2)\<close>
     proof(unfold compat_def, rule allI, rule allI, rule allI, rule impI)
       fix x y1 y2
-      assume \<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2\<close>
+      assume P:\<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2\<close>
+      from P have P1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close> by (rule conjunct1)
+      from P have P2:\<open>\<langle>x, y2\<rangle> \<in> f2\<close> by (rule conjunct2)
       show \<open>y1 = y2\<close>
-        sorry
+      proof(rule CollectE[OF H1'], rule CollectE[OF H2'])
+        assume J0:\<open>f1 \<in> Pow(nat \<times> A)\<close>
+        assume J1:\<open>f2 \<in> Pow(nat \<times> A)\<close>
+        assume J2:\<open>\<exists>m. partcomp(A, f1, m, a, g)\<close>
+        assume J3:\<open>\<exists>m. partcomp(A, f2, m, a, g)\<close>
+        show \<open>y1 = y2\<close>
+        proof(rule exE[OF J2], rule exE[OF J3])
+          fix m1 m2
+          assume K1:\<open>partcomp(A, f1, m1, a, g)\<close>
+          hence K1:\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,succ(m1),g)\<close>
+            by (unfold partcomp_def)
+          assume K2:\<open>partcomp(A, f2, m2, a, g)\<close>
+          hence K2':\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,succ(m2),g)\<close>
+            by (unfold partcomp_def)
+          show \<open>y1 = y2\<close>
+(* x < succ(m1) & x < succ(m2)
+
+*)
+            sorry
+        qed
+      qed
     qed
   qed
 qed

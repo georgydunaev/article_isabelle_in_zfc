@@ -1,4 +1,4 @@
-theory newzfc imports HOL.HOL ZFC_in_HOL.ZFC_in_HOL
+theory newzfc imports ZFC_in_HOL.ZFC_in_HOL
 begin
 
 axiomatization Collect :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set" \<comment> \<open>comprehension\<close>
