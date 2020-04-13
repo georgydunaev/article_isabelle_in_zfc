@@ -7,9 +7,50 @@ then define Von Neumann hierarchy
 then prove V=\<Union>(\<alpha>\<in>Ord).V\<alpha>
 trying to rewrite everything without replacement
 *)
+theorem nat_induct_bound :
+  assumes H0:\<open>P(0)\<close>
+  assumes H1:\<open>!!x. x\<in>nat \<Longrightarrow> P(x) \<Longrightarrow> P(succ(x))\<close>
+  shows \<open>\<forall>n\<in>nat. P(n)\<close>
+proof(rule ballI)
+  fix n
+  assume H2:\<open>n\<in>nat\<close>
+  show \<open>P(n)\<close>
+  proof(rule nat_induct[of n])
+    from H2 show \<open>n\<in>nat\<close> by assumption
+  next
+    show \<open>P(0)\<close> by (rule H0)
+  next
+    fix x
+    assume H3:\<open>x\<in>nat\<close>
+    assume H4:\<open>P(x)\<close>
+    show \<open>P(succ(x))\<close> by (rule H1[OF H3 H4])
+  qed
+qed
+
+theorem nat_Tr : \<open>\<forall>n\<in>nat. m\<in>n \<longrightarrow> m\<in>nat\<close>
+proof(rule nat_induct_bound)
+  show \<open>m \<in> 0 \<longrightarrow> m \<in> nat\<close> by auto
+next
+  fix x
+  assume H0:\<open>x \<in> nat\<close>
+  assume H1:\<open>m \<in> x \<longrightarrow> m \<in> nat\<close>
+  show \<open>m \<in> succ(x) \<longrightarrow> m \<in> nat\<close>
+  proof(rule impI)
+    assume H2:\<open>m\<in>succ(x)\<close>
+    show \<open>m \<in> nat\<close>
+    proof(rule succE[OF H2])
+      assume H3:\<open>m = x\<close>
+      from H0 and H3 show \<open>m \<in> nat\<close>
+        by auto
+    next
+      assume H4:\<open>m \<in> x\<close>
+      show \<open>m \<in> nat\<close>
+        by(rule mp[OF H1 H4])
+    qed
+  qed
+qed
 
 (* Natural numbers are linearly ordered. *)
-
 theorem zeroleq : \<open>\<forall>n\<in>nat. 0\<in>n\<or>0=n\<close>
 proof(rule ballI)
   fix n
@@ -44,26 +85,6 @@ qed
 
 theorem JH2_1ii : \<open>m\<in>succ(n) \<Longrightarrow> m\<in>n\<or>m=n\<close>
   by auto
-
-theorem nat_induct_bound : 
-  assumes H0:\<open>P(0)\<close>
-  assumes H1:\<open>!!x. x\<in>nat \<Longrightarrow> P(x) \<Longrightarrow> P(succ(x))\<close>
-  shows \<open>\<forall>n\<in>nat. P(n)\<close>
-proof(rule ballI)
-  fix n
-  assume H2:\<open>n\<in>nat\<close>
-  show \<open>P(n)\<close>
-  proof(rule nat_induct[of n])
-    from H2 show \<open>n\<in>nat\<close> by assumption
-  next
-    show \<open>P(0)\<close> by (rule H0)
-  next
-    fix x
-    assume H3:\<open>x\<in>nat\<close>
-    assume H4:\<open>P(x)\<close>
-    show \<open>P(succ(x))\<close> by (rule H1[OF H3 H4])
-  qed
-qed
 
 theorem nat_transitive:\<open>\<forall>n\<in>nat. \<forall>k. \<forall>m.  k \<in> m \<and> m \<in> n \<longrightarrow> k \<in> n\<close>
 proof(rule nat_induct_bound)
@@ -303,9 +324,9 @@ theorem nat_elem_is_ss:\<open>\<forall>m\<in>nat. n\<in>m \<longrightarrow> n\<s
 
 theorem nat_ldfghj:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. n\<subseteq>m \<and> n\<noteq>m \<longrightarrow> n\<in>m\<close>
   sorry
+
 (*
 do it through ordinals.
-
 *)
 
 theorem nat_linord_ss:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<subseteq>n\<or>n\<subseteq>m\<close>
@@ -314,8 +335,6 @@ theorem nat_linord_ss:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<subseteq
 (* Union of compatible set of functions is a function. *)
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
   where "compat(f1,f2) == \<forall>x.\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
-
-(*\<in>(domain(f1)\<inter>domain(f2))*)
 
 definition compatset :: \<open>i\<Rightarrow>o\<close>
   where "compatset(S) == \<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)" 
@@ -387,7 +406,7 @@ definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
                             
 (* m-step computation based on a and g *)
 definition partcomp :: \<open>[i,i,i,i,i]\<Rightarrow>o\<close>
-  where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,succ(m),g)\<close>
+  where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,m,g)\<close>
 
 (* F *)
 definition pcs :: \<open>[i,i,i]\<Rightarrow>i\<close>
@@ -419,10 +438,10 @@ proof (unfold compatset_def)
         proof(rule exE[OF J2], rule exE[OF J3])
           fix m1 m2
           assume K1:\<open>partcomp(A, f1, m1, a, g)\<close>
-          hence K1:\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,succ(m1),g)\<close>
+          hence K1:\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
             by (unfold partcomp_def)
           assume K2:\<open>partcomp(A, f2, m2, a, g)\<close>
-          hence K2':\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,succ(m2),g)\<close>
+          hence K2':\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,m2,g)\<close>
             by (unfold partcomp_def)
           show \<open>y1 = y2\<close>
 (* x < succ(m1) & x < succ(m2)
@@ -494,11 +513,6 @@ proof -
     fix x
     assume K: \<open>x \<in> nat\<close>
     show \<open>(f ` x) = (t ` x)\<close>
-(*
-lemma nat_induct [case_names 0 succ, induct set: nat]:
-    "[| n \<in> nat;  P(0);  !!x. [| x \<in> nat;  P(x) |] ==> P(succ(x)) |] ==> P(n)"
-*)
-(*    proof(induct x rule: nat_induct) *)
     proof(rule nat_induct[of x])
       show \<open>x \<in> nat\<close> by (rule K)
     next
@@ -520,19 +534,12 @@ lemma nat_induct [case_names 0 succ, induct set: nat]:
     qed
   qed
 qed
-(*
-context k_partial_order
-begin
-end
-*)
+
 locale rec_thm =
   fixes A a g
   assumes H1:\<open>a \<in> A\<close>
   assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
 begin
-
-theorem trr: \<open>a\<in>A\<close>
-  by (rule H1)
 
 lemma l1 : \<open>\<Union>pcs(A, a, g) \<subseteq> nat \<times> A\<close>
 proof
@@ -577,7 +584,30 @@ next
 qed
 
 lemma lsinglfun : \<open>function({\<langle>0, a\<rangle>})\<close>
-  sorry
+proof(unfold function_def)
+  show \<open> \<forall>x y. \<langle>x, y\<rangle> \<in> {\<langle>0, a\<rangle>} \<longrightarrow>
+          (\<forall>y'. \<langle>x, y'\<rangle> \<in> {\<langle>0, a\<rangle>} \<longrightarrow>
+                y = y')\<close>
+  proof(rule allI,rule allI,rule impI,rule allI,rule impI)
+    fix x y y'
+    assume H0:\<open>\<langle>x, y\<rangle> \<in> {\<langle>0, a\<rangle>}\<close>
+    assume H1:\<open>\<langle>x, y'\<rangle> \<in> {\<langle>0, a\<rangle>}\<close>
+    show \<open>y = y'\<close>
+    proof(rule upair.singletonE[OF H0],rule upair.singletonE[OF H1])
+      assume H0:\<open>\<langle>x, y\<rangle> = \<langle>0, a\<rangle>\<close>
+      assume H1:\<open>\<langle>x, y'\<rangle> = \<langle>0, a\<rangle>\<close>
+      from H0 and H1 have H:\<open>\<langle>x, y\<rangle> = \<langle>x, y'\<rangle>\<close> by auto
+      then show \<open>y = y'\<close> by auto
+    qed
+  qed
+qed
+
+lemma singlsatpc:\<open>satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
+proof(unfold satpc_def)
+  show \<open>\<forall>n\<in>0. {\<langle>0, a\<rangle>} ` succ(n) =
+           g ` \<langle>{\<langle>0, a\<rangle>} ` n, n\<rangle>\<close>
+    by auto
+qed
 
 lemma l2': \<open>0 \<in> domain(\<Union>pcs(A, a, g))\<close>
 proof
@@ -604,7 +634,7 @@ proof
         proof
           show \<open>partcomp(A, {\<langle>0, a\<rangle>}, 0, a, g)\<close>
           proof(unfold partcomp_def)
-            show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A \<and> {\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 1, g)\<close>
+            show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A \<and> {\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
             proof
               show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A\<close>
               proof (unfold Pi_def)
@@ -628,7 +658,7 @@ proof
                       assume W:\<open>x\<in>1\<close>
                       from W have W:\<open>x=0\<close> by (rule le1)
                       have Y:\<open>0\<in>domain({\<langle>0, a\<rangle>})\<close>
-                        sorry
+                        by auto
                       from W and Y 
                       show \<open>x\<in>domain({\<langle>0, a\<rangle>})\<close>
                         by auto
@@ -639,13 +669,13 @@ proof
                   qed
                 qed
               qed
-              show \<open>{\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 1, g)\<close>
+              show \<open>{\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
               proof
                 show \<open>{\<langle>0, a\<rangle>} ` 0 = a\<close>
-                  sorry
+                  by (rule func.singleton_apply)
               next
-                show \<open>satpc({\<langle>0, a\<rangle>}, 1, g)\<close>
-                  sorry
+                show \<open>satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
+                  by (rule singlsatpc)
               qed
             qed
           qed
@@ -783,14 +813,6 @@ next
 qed
 
 end
-
-
-theorem \<open>a\<in>A \<Longrightarrow> a\<in>A\<close>
-proof (rule rec_thm.trr)
-  show \<open>a \<in> A \<Longrightarrow> rec_thm(A,a,g)\<close>
-  proof (unfold rec_thm_def)
-    oops
-
 
 definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ else _\<close>)
   where "fite(A, \<phi>, a, b) == \<Union>{x\<in>A.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
@@ -985,15 +1007,5 @@ proof
     qed
   qed
 qed
-
-(* Maybe not be true!
-theorem funext : 
-  fixes A f1 f2
-  assumes D1:\<open>dom(f1) = A\<close>
-  assumes D2:\<open>dom(f2) = A\<close>
-  assumes \<open>\<forall>x\<in>A. (f1`x=f2`x)\<close>
-  shows \<open>f1 = f2\<close>
-proof
-*)
 
 end
