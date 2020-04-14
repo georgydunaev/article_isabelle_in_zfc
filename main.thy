@@ -207,19 +207,21 @@ next
   qed
 qed
 
-theorem le_succ : \<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<in>n \<longrightarrow> succ(m)\<in>succ(n)\<close>
+theorem succ_le : \<open>\<forall>n\<in>nat. \<forall>m\<in>nat. succ(m)\<in>succ(n) \<longrightarrow> m\<in>n\<close>
+  sorry
+
+theorem le_succ : \<open>\<forall>n\<in>nat. \<forall>m. m\<in>n \<longrightarrow> succ(m)\<in>succ(n)\<close>
 proof(rule nat_induct_bound)
-  show \<open>\<forall>m\<in>nat. m \<in> 0 \<longrightarrow> succ(m) \<in> 1\<close>
+  show \<open>\<forall>m. m \<in> 0 \<longrightarrow> succ(m) \<in> 1\<close>
     by auto
 next
   fix x
   assume H0:\<open>x\<in>nat\<close>
-  assume H1:\<open>\<forall>m\<in>nat. m \<in> x \<longrightarrow> succ(m) \<in> succ(x)\<close>
-  show \<open> \<forall>m\<in>nat. m \<in> succ(x) \<longrightarrow>
+  assume H1:\<open>\<forall>m. m \<in> x \<longrightarrow> succ(m) \<in> succ(x)\<close>
+  show \<open> \<forall>m. m \<in> succ(x) \<longrightarrow>
             succ(m) \<in> succ(succ(x))\<close>
-  proof(rule ballI, rule impI)
+  proof(rule allI, rule impI)
     fix m
-    assume HR0:\<open>m\<in>nat\<close>
     assume HR1:\<open>m\<in>succ(x)\<close>
     show \<open>succ(m) \<in> succ(succ(x))\<close>
     proof(rule succE[OF HR1])
@@ -229,7 +231,7 @@ next
     next
       assume Q:\<open>m \<in> x\<close>
       have Q:\<open>succ(m) \<in> succ(x)\<close>
-        by (rule mp[OF bspec[OF H1 HR0] Q])
+        by (rule mp[OF spec[OF H1] Q])
       from Q show \<open>succ(m) \<in> succ(succ(x))\<close>
         by (rule succI2)
     qed
@@ -417,31 +419,37 @@ lemma pcs_ind :
   assumes F2:\<open>m2\<in>nat\<close>
   assumes H1:\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
   assumes H2:\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,m2,g)\<close>
-  shows \<open>\<forall>n\<in>nat. n\<in>m1 \<and> n\<in>m2 \<longrightarrow> f1`n = f2`n\<close>
+  shows \<open>\<forall>n\<in>nat. n\<in>succ(m1) \<and> n\<in>succ(m2) \<longrightarrow> f1`n = f2`n\<close>
 proof(rule nat_induct_bound)
-  from H1 and H2 show \<open>0\<in>m1 \<and> 0\<in>m2 \<longrightarrow> f1 ` 0 = f2 ` 0\<close> by auto
+  from H1 and H2 show \<open>0\<in>succ(m1) \<and> 0\<in>succ(m2) \<longrightarrow> f1 ` 0 = f2 ` 0\<close> by auto
 next
   fix x
   assume J0:\<open>x\<in>nat\<close>
-  assume J1:\<open>x \<in> m1 \<and> x \<in> m2 \<longrightarrow> f1 ` x = f2 ` x\<close>
+  assume J1:\<open>x \<in> succ(m1) \<and> x \<in> succ(m2) \<longrightarrow> f1 ` x = f2 ` x\<close>
   from H1 have G1:\<open>\<forall>n \<in> m1 . f1`succ(n) = g ` <f1`n, n>\<close> 
     by (unfold satpc_def, auto)
   from H2 have G2:\<open>\<forall>n \<in> m2 . f2`succ(n) = g ` <f2`n, n>\<close> 
     by (unfold satpc_def, auto)
-  show \<open>succ(x) \<in> m1 \<and> succ(x) \<in> m2 \<longrightarrow> 
+  show \<open>succ(x) \<in> succ(m1) \<and> succ(x) \<in> succ(m2) \<longrightarrow> 
         f1 ` succ(x) = f2 ` succ(x)\<close>
   proof
-    assume K:\<open>succ(x) \<in> m1 \<and> succ(x) \<in> m2\<close>
-    from K have K1:\<open>succ(x) \<in> m1\<close> by auto
-    from K have K2:\<open>succ(x) \<in> m2\<close> by auto
-    have U1:\<open>x\<in>m1\<close> 
-      by (rule Nat.succ_in_naturalD[OF K1 F1])
-    have U2:\<open>x\<in>m2\<close> 
-      by (rule Nat.succ_in_naturalD[OF K2 F2])
+    assume K:\<open>succ(x) \<in> succ(m1) \<and> succ(x) \<in> succ(m2)\<close>
+    from K have K1:\<open>succ(x) \<in> succ(m1)\<close> by auto
+    from K have K2:\<open>succ(x) \<in> succ(m2)\<close> by auto
+    from K1 and F1 have K1':\<open>x \<in> m1\<close> 
+(*    proof (rule bspec[OF succ_le])*)
+      sorry
+    from K2 and F2 have K2':\<open>x \<in> m2\<close> 
+(*    proof (rule bspec[OF succ_le])*)
+      sorry
+    have U1:\<open>x\<in>succ(m1)\<close> 
+      by (rule Nat.succ_in_naturalD[OF K1 Nat.nat_succI[OF F1]])
+    have U2:\<open>x\<in>succ(m2)\<close> 
+      by (rule Nat.succ_in_naturalD[OF K2 Nat.nat_succI[OF F2]])
     have Y1:\<open>f1`succ(x) = g ` <f1`x, x>\<close>
-      by (rule bspec[OF G1 U1])
+      by (rule bspec[OF G1 K1'])
     have Y2:\<open>f2`succ(x) = g ` <f2`x, x>\<close>
-      by (rule bspec[OF G2 U2])
+      by (rule bspec[OF G2 K2'])
     have \<open>f1 ` x = f2 ` x\<close>
       by(rule mp[OF J1 conjI[OF U1 U2]])
     then have Y:\<open>g ` <f1`x, x> = g ` <f2`x, x>\<close> by auto
@@ -493,10 +501,14 @@ proof (unfold compatset_def)
           proof(rule func.apply_equality[OF P2])
             from K2' show \<open>(f2:succ(m2)\<rightarrow>A)\<close>  by auto
           qed
+          have m1nat:\<open>m1\<in>nat\<close>
+            sorry
+          have m2nat:\<open>m2\<in>nat\<close>
+            sorry
           from J0  have KK:\<open>x\<in>nat\<close>
             sorry
 (* x is in  the domain of f1  ---- succ(m1)
-so we can have  x \<in> ?m1.2 \<and> x \<in> ?m2.2 
+so we can have both  x \<in> ?m1.2 \<and> x \<in> ?m2.2 
 how to prove that m1 \<in> nat ? from J0 !  f1 is a subset of nat \<times> A *)
           have W:\<open>f1`x=f2`x\<close>
           (*proof(rule mp[OF bspec[OF pcs_ind KK] ]) good!*)
