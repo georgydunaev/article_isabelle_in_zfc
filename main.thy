@@ -207,21 +207,54 @@ next
   qed
 qed
 
-theorem succ_le : \<open>\<forall>n\<in>nat. \<forall>m\<in>nat. succ(m)\<in>succ(n) \<longrightarrow> m\<in>n\<close>
-  sorry
-
-theorem le_succ : \<open>\<forall>n\<in>nat. \<forall>m. m\<in>n \<longrightarrow> succ(m)\<in>succ(n)\<close>
+theorem succ_le : \<open>\<forall>n\<in>nat. succ(m)\<in>succ(n) \<longrightarrow> m\<in>n\<close>
 proof(rule nat_induct_bound)
-  show \<open>\<forall>m. m \<in> 0 \<longrightarrow> succ(m) \<in> 1\<close>
+  show \<open> succ(m) \<in> 1 \<longrightarrow> m \<in> 0\<close>
+    by blast
+next
+  fix x
+  assume H0:\<open>x \<in> nat\<close>
+  assume H1:\<open>succ(m) \<in> succ(x) \<longrightarrow> m \<in> x\<close>
+  show \<open> succ(m) \<in>
+             succ(succ(x)) \<longrightarrow>
+             m \<in> succ(x)\<close>
+  proof(rule impI)
+    assume J0:\<open>succ(m) \<in> succ(succ(x))\<close>
+    show \<open>m \<in> succ(x)\<close>
+    proof(rule succE[OF J0])
+      assume R:\<open>succ(m) = succ(x)\<close>
+      hence R:\<open>m=x\<close> by (rule upair.succ_inject)
+      from R and succI1 show \<open>m \<in> succ(x)\<close> by auto
+    next
+      assume R:\<open>succ(m) \<in> succ(x)\<close>
+      have R:\<open>m\<in>x\<close> by (rule mp[OF H1 R])
+      then show \<open>m \<in> succ(x)\<close> by auto
+    qed
+  qed
+qed
+
+theorem succ_le2 : \<open>\<forall>n\<in>nat. \<forall>m. succ(m)\<in>succ(n) \<longrightarrow> m\<in>n\<close>
+proof
+  fix n
+  assume H:\<open>n\<in>nat\<close>
+  show \<open>\<forall>m. succ(m) \<in> succ(n) \<longrightarrow> m \<in> n\<close>
+  proof
+    fix m
+    from succ_le and H show \<open>succ(m) \<in> succ(n) \<longrightarrow> m \<in> n\<close> by auto
+  qed
+qed
+
+theorem le_succ : \<open>\<forall>n\<in>nat. m\<in>n \<longrightarrow> succ(m)\<in>succ(n)\<close>
+proof(rule nat_induct_bound)
+  show \<open>m \<in> 0 \<longrightarrow> succ(m) \<in> 1\<close>
     by auto
 next
   fix x
   assume H0:\<open>x\<in>nat\<close>
-  assume H1:\<open>\<forall>m. m \<in> x \<longrightarrow> succ(m) \<in> succ(x)\<close>
-  show \<open> \<forall>m. m \<in> succ(x) \<longrightarrow>
+  assume H1:\<open>m \<in> x \<longrightarrow> succ(m) \<in> succ(x)\<close>
+  show \<open>m \<in> succ(x) \<longrightarrow>
             succ(m) \<in> succ(succ(x))\<close>
-  proof(rule allI, rule impI)
-    fix m
+  proof(rule impI)
     assume HR1:\<open>m\<in>succ(x)\<close>
     show \<open>succ(m) \<in> succ(succ(x))\<close>
     proof(rule succE[OF HR1])
@@ -231,7 +264,7 @@ next
     next
       assume Q:\<open>m \<in> x\<close>
       have Q:\<open>succ(m) \<in> succ(x)\<close>
-        by (rule mp[OF spec[OF H1] Q])
+        by (rule mp[OF H1 Q])
       from Q show \<open>succ(m) \<in> succ(succ(x))\<close>
         by (rule succI2)
     qed
@@ -436,12 +469,8 @@ next
     assume K:\<open>succ(x) \<in> succ(m1) \<and> succ(x) \<in> succ(m2)\<close>
     from K have K1:\<open>succ(x) \<in> succ(m1)\<close> by auto
     from K have K2:\<open>succ(x) \<in> succ(m2)\<close> by auto
-    from K1 and F1 have K1':\<open>x \<in> m1\<close> 
-(*    proof (rule bspec[OF succ_le])*)
-      sorry
-    from K2 and F2 have K2':\<open>x \<in> m2\<close> 
-(*    proof (rule bspec[OF succ_le])*)
-      sorry
+    have K1':\<open>x \<in> m1\<close> by (rule mp[OF bspec[OF succ_le F1] K1])
+    have K2':\<open>x \<in> m2\<close> by (rule mp[OF bspec[OF succ_le F2] K2])
     have U1:\<open>x\<in>succ(m1)\<close> 
       by (rule Nat.succ_in_naturalD[OF K1 Nat.nat_succI[OF F1]])
     have U2:\<open>x\<in>succ(m2)\<close> 
@@ -511,8 +540,24 @@ proof (unfold compatset_def)
 so we can have both  x \<in> ?m1.2 \<and> x \<in> ?m2.2 
 how to prove that m1 \<in> nat ? from J0 !  f1 is a subset of nat \<times> A *)
           have W:\<open>f1`x=f2`x\<close>
-          (*proof(rule mp[OF bspec[OF pcs_ind KK] ]) good!*)
-            sorry
+          proof(rule mp[OF bspec[OF pcs_ind KK] ]) (*good!*)
+            show \<open>m1 \<in> nat\<close>
+              sorry
+          next
+            show \<open>m2 \<in> nat\<close>
+              sorry
+          next
+            show \<open>f1 \<in> succ(m1) -> A \<and>
+    f1 ` 0 = a \<and> satpc(f1, m1, g)\<close>
+              by (rule K1')
+          next
+            show \<open>f2 \<in> succ(m2) -> A \<and>
+    f2 ` 0 = a \<and> satpc(f2, m2, g)\<close>
+              by (rule K2')
+          next
+            show \<open>x \<in> succ(m1) \<and> x \<in> succ(m2)\<close>
+              sorry
+          qed
           from L1 and W and L2
           show \<open>y1 = y2\<close> by auto
 (*
