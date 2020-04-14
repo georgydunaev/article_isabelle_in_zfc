@@ -412,6 +412,45 @@ definition partcomp :: \<open>[i,i,i,i,i]\<Rightarrow>o\<close>
 definition pcs :: \<open>[i,i,i]\<Rightarrow>i\<close>
   where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
 
+lemma pcs_ind : 
+  assumes F1:\<open>m1\<in>nat\<close>
+  assumes F2:\<open>m2\<in>nat\<close>
+  assumes H1:\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
+  assumes H2:\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,m2,g)\<close>
+  shows \<open>\<forall>n\<in>nat. n\<in>m1 \<and> n\<in>m2 \<longrightarrow> f1`n = f2`n\<close>
+proof(rule nat_induct_bound)
+  from H1 and H2 show \<open>0\<in>m1 \<and> 0\<in>m2 \<longrightarrow> f1 ` 0 = f2 ` 0\<close> by auto
+next
+  fix x
+  assume J0:\<open>x\<in>nat\<close>
+  assume J1:\<open>x \<in> m1 \<and> x \<in> m2 \<longrightarrow> f1 ` x = f2 ` x\<close>
+  from H1 have G1:\<open>\<forall>n \<in> m1 . f1`succ(n) = g ` <f1`n, n>\<close> 
+    by (unfold satpc_def, auto)
+  from H2 have G2:\<open>\<forall>n \<in> m2 . f2`succ(n) = g ` <f2`n, n>\<close> 
+    by (unfold satpc_def, auto)
+  show \<open>succ(x) \<in> m1 \<and> succ(x) \<in> m2 \<longrightarrow> 
+        f1 ` succ(x) = f2 ` succ(x)\<close>
+  proof
+    assume K:\<open>succ(x) \<in> m1 \<and> succ(x) \<in> m2\<close>
+    from K have K1:\<open>succ(x) \<in> m1\<close> by auto
+    from K have K2:\<open>succ(x) \<in> m2\<close> by auto
+    have U1:\<open>x\<in>m1\<close> 
+      by (rule Nat.succ_in_naturalD[OF K1 F1])
+    have U2:\<open>x\<in>m2\<close> 
+      by (rule Nat.succ_in_naturalD[OF K2 F2])
+    have Y1:\<open>f1`succ(x) = g ` <f1`x, x>\<close>
+      by (rule bspec[OF G1 U1])
+    have Y2:\<open>f2`succ(x) = g ` <f2`x, x>\<close>
+      by (rule bspec[OF G2 U2])
+    have \<open>f1 ` x = f2 ` x\<close>
+      by(rule mp[OF J1 conjI[OF U1 U2]])
+    then have Y:\<open>g ` <f1`x, x> = g ` <f2`x, x>\<close> by auto
+    from Y1 and Y2 and Y
+    show \<open>f1 ` succ(x) = f2 ` succ(x)\<close>
+      by auto
+  qed
+qed
+
 lemma pcs_lem : \<open>compatset(pcs(A, a, g))\<close>
 proof (unfold compatset_def)
   show \<open>\<forall>f1\<in>pcs(A, a, g). \<forall>f2\<in>pcs(A, a, g). compat(f1, f2)\<close>
@@ -438,21 +477,47 @@ proof (unfold compatset_def)
         proof(rule exE[OF J2], rule exE[OF J3])
           fix m1 m2
           assume K1:\<open>partcomp(A, f1, m1, a, g)\<close>
-          hence K1:\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
+          hence K1':\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
             by (unfold partcomp_def)
           assume K2:\<open>partcomp(A, f2, m2, a, g)\<close>
           hence K2':\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,m2,g)\<close>
             by (unfold partcomp_def)
-          show \<open>y1 = y2\<close>
-(* x < succ(m1) & x < succ(m2)
-
+          (*have \<open>\<forall>n\<in>nat. P(n)\<close>
+ func.apply_equality: \<langle>?a, ?b\<rangle> \<in> ?f \<Longrightarrow> ?f \<in> Pi(?A, ?B) \<Longrightarrow> ?f ` ?a = ?b
 *)
+          have L1:\<open>f1`x=y1\<close>
+          proof(rule func.apply_equality[OF P1])
+            from K1' show \<open>(f1:succ(m1)\<rightarrow>A)\<close>  by auto
+          qed
+          have L2:\<open>f2`x=y2\<close>
+          proof(rule func.apply_equality[OF P2])
+            from K2' show \<open>(f2:succ(m2)\<rightarrow>A)\<close>  by auto
+          qed
+          from J0  have KK:\<open>x\<in>nat\<close>
             sorry
+(* x is in  the domain of f1  ---- succ(m1)
+so we can have  x \<in> ?m1.2 \<and> x \<in> ?m2.2 
+how to prove that m1 \<in> nat ? from J0 !  f1 is a subset of nat \<times> A *)
+          have W:\<open>f1`x=f2`x\<close>
+          (*proof(rule mp[OF bspec[OF pcs_ind KK] ]) good!*)
+            sorry
+          from L1 and W and L2
+          show \<open>y1 = y2\<close> by auto
+(*
+  shows \<open>\<forall>n\<in>nat. n\<in>m1 \<and> n\<in>m2 \<longrightarrow> f1`n = f2`n\<close>
+ x < succ(m1) & x < succ(m2)
+x \<in> nat
+nat_induct_bound :
+  assumes H0:\<open>P(0)\<close>
+  assumes H1:\<open>!!x. x\<in>nat \<Longrightarrow> P(x) \<Longrightarrow> P(succ(x))\<close>
+  shows \<open>\<forall>n\<in>nat. P(n)\<close>
+*)
         qed
       qed
     qed
   qed
 qed
+
  (* apply (unfold pcs_def, unfold compatset_def)*)
 theorem fuissu : \<open>f \<in> X -> Y \<Longrightarrow> f \<subseteq> X\<times>Y\<close>
 proof
@@ -609,80 +674,83 @@ proof(unfold satpc_def)
     by auto
 qed
 
-lemma l2': \<open>0 \<in> domain(\<Union>pcs(A, a, g))\<close>
+lemma zainupcs : \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
 proof
-  show \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
-  proof
-    show \<open>\<langle>0, a\<rangle> \<in> {\<langle>0, a\<rangle>}\<close>
-      by auto
-  next
-    show \<open>{\<langle>0, a\<rangle>} \<in> pcs(A, a, g)\<close>
-    proof(unfold pcs_def)
-      show \<open>{\<langle>0, a\<rangle>} \<in> {t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)}\<close>
-      proof
-        show \<open>{\<langle>0, a\<rangle>} \<in> Pow(nat \<times> A)\<close>
-        proof(rule PowI, rule equalities.singleton_subsetI)
-          show \<open>\<langle>0, a\<rangle> \<in> nat \<times> A\<close>
-          proof
-            show \<open>0 \<in> nat\<close> by auto
-          next
-            show \<open>a \<in> A\<close> by (rule H1)
-          qed
-        qed
-      next
-        show \<open>\<exists>m. partcomp(A, {\<langle>0, a\<rangle>}, m, a, g)\<close>
+  show \<open>\<langle>0, a\<rangle> \<in> {\<langle>0, a\<rangle>}\<close>
+    by auto
+next
+  show \<open>{\<langle>0, a\<rangle>} \<in> pcs(A, a, g)\<close>
+  proof(unfold pcs_def)
+    show \<open>{\<langle>0, a\<rangle>} \<in> {t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)}\<close>
+    proof
+      show \<open>{\<langle>0, a\<rangle>} \<in> Pow(nat \<times> A)\<close>
+      proof(rule PowI, rule equalities.singleton_subsetI)
+        show \<open>\<langle>0, a\<rangle> \<in> nat \<times> A\<close>
         proof
-          show \<open>partcomp(A, {\<langle>0, a\<rangle>}, 0, a, g)\<close>
-          proof(unfold partcomp_def)
-            show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A \<and> {\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
-            proof
-              show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A\<close>
-              proof (unfold Pi_def)
-                show \<open>{\<langle>0, a\<rangle>} \<in> {f \<in> Pow(1 \<times> A) . 1 \<subseteq> domain(f) \<and> function(f)}\<close>
-                proof
-                  show \<open>{\<langle>0, a\<rangle>} \<in> Pow(1 \<times> A)\<close>
-                  proof(rule PowI, rule equalities.singleton_subsetI)
-                    show \<open>\<langle>0, a\<rangle> \<in> 1 \<times> A\<close>
-                    proof
-                      show \<open>0 \<in> 1\<close> by auto
-                    next
-                      show \<open>a \<in> A\<close> by (rule H1)
-                    qed
-                  qed
-                next
-                  show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>}) \<and> function({\<langle>0, a\<rangle>})\<close>
-                  proof 
-                    show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>})\<close>
-                    proof
-                      fix x
-                      assume W:\<open>x\<in>1\<close>
-                      from W have W:\<open>x=0\<close> by (rule le1)
-                      have Y:\<open>0\<in>domain({\<langle>0, a\<rangle>})\<close>
-                        by auto
-                      from W and Y 
-                      show \<open>x\<in>domain({\<langle>0, a\<rangle>})\<close>
-                        by auto
-                    qed
+          show \<open>0 \<in> nat\<close> by auto
+        next
+          show \<open>a \<in> A\<close> by (rule H1)
+        qed
+      qed
+    next
+      show \<open>\<exists>m. partcomp(A, {\<langle>0, a\<rangle>}, m, a, g)\<close>
+      proof
+        show \<open>partcomp(A, {\<langle>0, a\<rangle>}, 0, a, g)\<close>
+        proof(unfold partcomp_def)
+          show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A \<and> {\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
+          proof
+            show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A\<close>
+            proof (unfold Pi_def)
+              show \<open>{\<langle>0, a\<rangle>} \<in> {f \<in> Pow(1 \<times> A) . 1 \<subseteq> domain(f) \<and> function(f)}\<close>
+              proof
+                show \<open>{\<langle>0, a\<rangle>} \<in> Pow(1 \<times> A)\<close>
+                proof(rule PowI, rule equalities.singleton_subsetI)
+                  show \<open>\<langle>0, a\<rangle> \<in> 1 \<times> A\<close>
+                  proof
+                    show \<open>0 \<in> 1\<close> by auto
                   next
-                    show \<open>function({\<langle>0, a\<rangle>})\<close>
-                      by (rule lsinglfun)
+                    show \<open>a \<in> A\<close> by (rule H1)
                   qed
                 qed
-              qed
-              show \<open>{\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
-              proof
-                show \<open>{\<langle>0, a\<rangle>} ` 0 = a\<close>
-                  by (rule func.singleton_apply)
               next
-                show \<open>satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
-                  by (rule singlsatpc)
+                show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>}) \<and> function({\<langle>0, a\<rangle>})\<close>
+                proof
+                  show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>})\<close>
+                  proof
+                    fix x
+                    assume W:\<open>x\<in>1\<close>
+                    from W have W:\<open>x=0\<close> by (rule le1)
+                    have Y:\<open>0\<in>domain({\<langle>0, a\<rangle>})\<close>
+                      by auto
+                    from W and Y 
+                    show \<open>x\<in>domain({\<langle>0, a\<rangle>})\<close>
+                      by auto
+                  qed
+                next
+                  show \<open>function({\<langle>0, a\<rangle>})\<close>
+                    by (rule lsinglfun)
+                qed
               qed
+            qed
+            show \<open>{\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
+            proof
+              show \<open>{\<langle>0, a\<rangle>} ` 0 = a\<close>
+                by (rule func.singleton_apply)
+            next
+              show \<open>satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
+                by (rule singlsatpc)
             qed
           qed
         qed
       qed
     qed
   qed
+qed
+
+lemma l2': \<open>0 \<in> domain(\<Union>pcs(A, a, g))\<close>
+proof
+  show \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
+    by (rule zainupcs)
 qed
 
 lemma l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
@@ -700,7 +768,7 @@ proof
       sorry
   next
     show \<open>0 \<in> domain(\<Union>pcs(A, a, g))\<close>
-      sorry
+      by (rule l2')
   qed
 qed
 
@@ -728,8 +796,15 @@ proof(unfold Pi_def)
   qed
 qed
 
-lemma l5: \<open>(\<Union>pcs(A, a, g)) ` 0 = a\<close>
-  sorry
+lemma l5: \<open>(\<Union>pcs(A, a, g)) ` 0 = a\<close>     
+proof(rule func.function_apply_equality)
+  show \<open>function(\<Union>pcs(A, a, g))\<close>
+    by (rule l3)
+next
+  show \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
+    by (rule zainupcs)
+qed
+(*sketch - *)
 
 lemma l6: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
   sorry
