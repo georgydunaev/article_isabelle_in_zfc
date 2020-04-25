@@ -371,6 +371,7 @@ lemma only1I2:
   apply (rule H, assumption+)
   done
 
+(* too weak 
 lemma only1mel: 
   assumes K: \<open>P(a)\<close>
   assumes H: \<open>(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
@@ -381,7 +382,7 @@ proof -
   show \<open>x = a\<close>
     by(rule H[OF W K])
 qed
-
+*)
 
 subsection \<open>Unique existence\<close>
 
@@ -394,7 +395,6 @@ text \<open>
   do NOT mean the same thing. The parser treats \<open>\<exists>!x y.P(x,y)\<close> as sequential.
 \<close>
 
-
 lemma ex1newI: \<open>\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> \<exists>! x. P(x)\<close>
   by (unfold ex1new_def, rule conjI, assumption+)
 
@@ -403,9 +403,8 @@ lemma ex1newE: \<open>\<exists>! x. P(x) \<Longrightarrow> (\<lbrakk>\<exists>x.
   apply (assumption | erule exE conjE)+
   done
 
-
 lemma ex1newE1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
-  by (unfold ex1new_def, erule conjunct1)
+  by (erule ex1newE)
 
 lemma ex1newE2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
   by (erule ex1newE)
@@ -414,7 +413,7 @@ lemma ex1badI:
   assumes H1:\<open>P(a)\<close> 
     and H2:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
   shows \<open>\<exists>!x. P(x)\<close>
-proof(unfold ex1new_def, rule conjI)
+proof(rule ex1newI)
   show \<open>\<exists>x. P(x)\<close>
     by (rule exI, rule H1)
 next
@@ -422,44 +421,37 @@ next
     by(rule only1I2, rule H2, assumption)
 qed
 
-lemma ex1_def : \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x))\<close>
-proof(rule iff_reflection)
-  show \<open>(\<exists>!x. P(x)) \<longleftrightarrow>
-    (\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x))\<close>
-  proof (rule iffI)
-    assume H:\<open>\<exists>!x. P(x)\<close>
-    show \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
-    proof(rule ex1newE[OF H])
-      assume H1:\<open>\<exists>x. P(x)\<close>
-      assume H2:\<open>!x. P(x)\<close>
-      show \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
-      proof(rule exE[OF H1],rule exI, rule conjI, assumption)
-        fix x
-        assume M:\<open>P(x)\<close>
-        show \<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
-          by (rule allI, rule impI, rule only1E'[OF H2 _ M], assumption)
-      qed
-    qed
-  next
-    assume H:\<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
-    show \<open>\<exists>!x. P(x)\<close>
-    proof(rule exE[OF H])
-      fix x
-      assume K:\<open>P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
-      have Px:\<open>P(x)\<close> by (rule conjunct1[OF K])
-      have J:\<open>(\<forall>y. P(y) \<longrightarrow> y = x)\<close> 
-        by (rule conjunct2[OF K])
-      show \<open>\<exists>!x. P(x)\<close>
-      proof(rule ex1badI)
-        show \<open>P(x)\<close> by (rule Px)
-      next
-        show\<open>(\<And>y. P(y) \<Longrightarrow> y = x)\<close>
-          by (rule mp[OF spec[OF J]])
-      qed
-    qed
+lemma ex1oldE: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
+proof(erule ex1newE)
+  assume H1:\<open>\<exists>x. P(x)\<close>
+  assume H2:\<open>!x. P(x)\<close>
+  show \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
+  proof(rule exE[OF H1], rule exI, rule conjI, assumption)
+    fix x
+    assume M:\<open>P(x)\<close>
+    show \<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
+      by (rule allI, rule impI, erule only1E'[OF H2 _ M])
   qed
 qed
 
+lemma ex1oldI : \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x) \<Longrightarrow> \<exists>!x. P(x)\<close>
+proof(erule exE)
+  fix x
+  assume K:\<open>P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
+  have Px:\<open>P(x)\<close> by (rule conjunct1[OF K])
+  have J:\<open>(\<forall>y. P(y) \<longrightarrow> y = x)\<close>
+    by (rule conjunct2[OF K])
+  show \<open>\<exists>!x. P(x)\<close>
+  proof(rule ex1badI)
+    show \<open>P(x)\<close> by (rule Px)
+  next
+    show\<open>(\<And>y. P(y) \<Longrightarrow> y = x)\<close>
+      by (rule mp[OF spec[OF J]])
+  qed
+qed
+
+lemma ex1_def : \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x))\<close>
+  by (rule iff_reflection, rule iffI, erule ex1oldE, erule ex1oldI)
 
 lemma ex1I: \<open>P(a) \<Longrightarrow> (\<And>x. P(x) \<Longrightarrow> x = a) \<Longrightarrow> \<exists>!x. P(x)\<close>
   apply (unfold ex1_def)
