@@ -4,7 +4,7 @@
 
 section \<open>Intuitionistic first-order logic\<close>
 
-theory IFOL
+theory my_IFOL
 imports Pure
 begin
 
@@ -87,8 +87,16 @@ definition Not (\<open>\<not> _\<close> [40] 40)
 definition iff  (infixr \<open>\<longleftrightarrow>\<close> 25)
   where \<open>P \<longleftrightarrow> Q \<equiv> (P \<longrightarrow> Q) \<and> (Q \<longrightarrow> P)\<close>
 
+(*
 definition Ex1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>\<exists>!\<close> 10)
   where ex1_def: \<open>\<exists>!x. P(x) \<equiv> \<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
+*)
+
+definition Only1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>!\<close> 10)
+  where only1_def: \<open>!x. P(x) \<equiv> (\<forall>x.\<forall>y. P(x) \<and> P(y) \<longrightarrow> x = y)\<close>
+
+definition Ex1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>\<exists>!\<close> 10)
+  where ex1new_def: \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x)) \<and> (!x. P(x))\<close>
 
 axiomatization where  \<comment> \<open>Reflection, admissible\<close>
   eq_reflection: \<open>(x = y) \<Longrightarrow> (x \<equiv> y)\<close> and
@@ -270,6 +278,39 @@ lemma iff_trans: \<open>\<lbrakk>P \<longleftrightarrow> Q; Q \<longleftrightarr
   apply (assumption | erule iffE | erule (1) notE impE)+
   done
 
+subsection \<open>Equality rules\<close>
+
+lemma sym: \<open>a = b \<Longrightarrow> b = a\<close>
+  apply (erule subst)
+  apply (rule refl)
+  done
+
+lemma trans: \<open>\<lbrakk>a = b; b = c\<rbrakk> \<Longrightarrow> a = c\<close>
+  apply (erule subst, assumption)
+  done
+
+lemma not_sym: \<open>b \<noteq> a \<Longrightarrow> a \<noteq> b\<close>
+  apply (erule contrapos)
+  apply (erule sym)
+  done
+
+text \<open>
+  Two theorems for rewriting only one instance of a definition:
+  the first for definitions of formulae and the second for terms.
+\<close>
+
+lemma def_imp_iff: \<open>(A \<equiv> B) \<Longrightarrow> A \<longleftrightarrow> B\<close>
+  apply unfold
+  apply (rule iff_refl)
+  done
+
+lemma meta_eq_to_obj_eq: \<open>(A \<equiv> B) \<Longrightarrow> A = B\<close>
+  apply unfold
+  apply (rule refl)
+  done
+
+lemma meta_eq_to_iff: \<open>x \<equiv> y \<Longrightarrow> x \<longleftrightarrow> y\<close>
+  by unfold (rule iff_refl)
 
 subsection \<open>Unique existence\<close>
 
@@ -282,10 +323,100 @@ text \<open>
   do NOT mean the same thing. The parser treats \<open>\<exists>!x y.P(x,y)\<close> as sequential.
 \<close>
 
+lemma only1I: \<open>(\<And>x y. P(x) \<and> P(y) \<Longrightarrow> x = y) \<Longrightarrow> !x. P(x)\<close>
+proof (unfold only1_def)
+  assume H:"(\<And>x y. P(x) \<and> P(y) \<Longrightarrow> x = y)"
+  show "\<forall>x y. P(x) \<and> P(y) \<longrightarrow> x = y"
+    by (rule allI impI H | assumption)+
+qed
+
+lemma only1E: \<open>(!x. P(x)) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
+proof (unfold only1_def)
+  assume H:\<open>\<forall>x y. P(x) \<and> P(y) \<longrightarrow> x = y\<close>
+  fix x y
+  assume Px:\<open>P(x)\<close>
+  assume Py:\<open>P(y)\<close>
+  show \<open>x = y\<close>
+    by (rule mp[OF spec[OF spec[OF H]] conjI[OF Px Py]])
+qed
+
+lemma only1lem: 
+  assumes H:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
+  shows \<open>(\<And>x y. P(x) \<and> P(y) \<Longrightarrow> x = y)\<close>
+proof -
+  fix x y
+  assume W:\<open>P(x) \<and> P(y)\<close>
+  from W have W1:\<open>P(x)\<close> by (rule conjunct1)
+  from W have W2:\<open>P(y)\<close> by (rule conjunct2)
+  have E1:\<open>x = a\<close> by (rule H[OF W1])
+  have E2:\<open>y = a\<close> by (rule H[OF W2])
+  show \<open>x = y\<close> by (rule trans[OF E1 sym[OF E2]])
+qed
+
+lemma only1I2: 
+  assumes H:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
+  shows \<open>!x. P(x)\<close>
+  apply (rule only1I)
+  apply (rule only1lem)
+  apply (rule H, assumption, assumption)
+  done
+
+lemma ex1E1: 
+  assumes H:\<open>\<exists>!x. P(x)\<close>
+  shows \<open>\<exists>x. P(x)\<close>
+proof -
+  from H have \<open>(\<exists>x. P(x))\<and>(!x. P(x))\<close>
+    by(unfold ex1new_def)
+  then show \<open>\<exists>x. P(x)\<close>
+    by (rule conjunct1)
+qed
+
+lemma ex1E2: 
+  assumes H:\<open>\<exists>!x. P(x)\<close>
+  shows \<open>!x. P(x)\<close>
+proof -
+  from H have \<open>(\<exists>x. P(x))\<and>(!x. P(x))\<close>
+    by(unfold ex1new_def)
+  then show \<open>!x. P(x)\<close>
+    by (rule conjunct2)
+qed
+
+
+lemma ex1_def : \<open>\<exists>!x. P(x) \<equiv> \<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
+proof(rule iff_reflection)
+  show \<open>(\<exists>!x. P(x)) \<longleftrightarrow>
+    (\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x))\<close>
+  proof (rule iffI)
+    assume H:\<open>\<exists>!x. P(x)\<close>
+    have H1:\<open>\<exists>x. P(x)\<close>
+      by (rule ex1E1[OF H])
+    show \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
+    proof(rule exE[OF H1],rule exI, rule conjI, assumption)
+      fix x
+      assume M:\<open>P(x)\<close>
+      show \<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
+      proof (rule )
+(* unfold ex1new_def) *)
+
+  sorry
+(*
 lemma ex1I: \<open>P(a) \<Longrightarrow> (\<And>x. P(x) \<Longrightarrow> x = a) \<Longrightarrow> \<exists>!x. P(x)\<close>
   apply (unfold ex1_def)
+
   apply (assumption | rule exI conjI allI impI)+
   done
+*)
+lemma ex1I: 
+  assumes H1:\<open>P(a)\<close> 
+    and H2:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
+  shows \<open>\<exists>!x. P(x)\<close>
+proof(unfold ex1new_def, rule conjI)
+  show \<open>\<exists>x. P(x)\<close>
+    by (rule exI, rule H1)
+next
+  show \<open>!x. P(x)\<close>
+    by(rule only1I2, rule H2, assumption)
+qed
 
 text \<open>Sometimes easier to use: the premises have no shared variables. Safe!\<close>
 lemma ex_ex1I: \<open>\<exists>x. P(x) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> \<exists>!x. P(x)\<close>
@@ -374,39 +505,6 @@ lemma ex1_cong:
   done
 
 
-subsection \<open>Equality rules\<close>
-
-lemma sym: \<open>a = b \<Longrightarrow> b = a\<close>
-  apply (erule subst)
-  apply (rule refl)
-  done
-
-lemma trans: \<open>\<lbrakk>a = b; b = c\<rbrakk> \<Longrightarrow> a = c\<close>
-  apply (erule subst, assumption)
-  done
-
-lemma not_sym: \<open>b \<noteq> a \<Longrightarrow> a \<noteq> b\<close>
-  apply (erule contrapos)
-  apply (erule sym)
-  done
-
-text \<open>
-  Two theorems for rewriting only one instance of a definition:
-  the first for definitions of formulae and the second for terms.
-\<close>
-
-lemma def_imp_iff: \<open>(A \<equiv> B) \<Longrightarrow> A \<longleftrightarrow> B\<close>
-  apply unfold
-  apply (rule iff_refl)
-  done
-
-lemma meta_eq_to_obj_eq: \<open>(A \<equiv> B) \<Longrightarrow> A = B\<close>
-  apply unfold
-  apply (rule refl)
-  done
-
-lemma meta_eq_to_iff: \<open>x \<equiv> y \<Longrightarrow> x \<longleftrightarrow> y\<close>
-  by unfold (rule iff_refl)
 
 text \<open>Substitution.\<close>
 lemma ssubst: \<open>\<lbrakk>b = a; P(a)\<rbrakk> \<Longrightarrow> P(b)\<close>
