@@ -317,39 +317,22 @@ subsection \<open>Only\<close>
 
 text \<open>\<close>
 
-lemma only1I: \<open>(\<And>x y. (\<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)) \<Longrightarrow> !x. P(x)\<close>
-proof (unfold only1_def)
-  assume H:"(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)"
-  show "\<forall>x y. P(x) \<and> P(y) \<longrightarrow> x = y"
-    by (rule allI, rule allI, rule impI, rule H,
+lemma only1I: 
+  assumes H: \<open>(\<And>x y. (\<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y))\<close>
+  shows \<open>!x. P(x)\<close>
+  by (unfold only1_def, rule allI, rule allI, rule impI, rule H,
         erule conjunct1, erule conjunct2)
-qed
-
-lemma only1E': \<open>(!x. P(x)) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
-proof (unfold only1_def)
-  assume H:\<open>\<forall>x y. P(x) \<and> P(y) \<longrightarrow> x = y\<close>
-  fix x y
-  assume Px:\<open>P(x)\<close>
-  assume Py:\<open>P(y)\<close>
-  show \<open>x = y\<close>
-    by (rule mp[OF spec[OF spec[OF H]] conjI[OF Px Py]])
-qed
 
 lemma only1E:
   assumes major:\<open>! x. P(x)\<close>
       and r:\<open>(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> R\<close>
     shows \<open>R\<close>
-  apply(rule r)
-  apply(rule only1E', rule major, assumption+)
-  done
-(*
   apply(insert major)
   apply(unfold only1_def)
   apply(rule r)
   apply(rule mp, rule spec, erule spec)
   apply(erule conjI, assumption)
   done
-*)
 
 lemma only1lem: 
   assumes H:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
@@ -410,41 +393,48 @@ lemma ex1newE2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
   by (erule ex1newE)
 
 lemma ex1badI: 
-  assumes H1:\<open>P(a)\<close> 
-    and H2:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
+  assumes 1:\<open>P(a)\<close> 
+    and 2:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
   shows \<open>\<exists>!x. P(x)\<close>
 proof(rule ex1newI)
   show \<open>\<exists>x. P(x)\<close>
-    by (rule exI, rule H1)
+    by (rule exI, rule 1)
 next
   show \<open>!x. P(x)\<close>
-    by(rule only1I2, rule H2, assumption)
+    by(rule only1I2, rule 2, assumption)
 qed
 
 lemma ex1oldE: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
-proof(erule ex1newE)
-  assume H1:\<open>\<exists>x. P(x)\<close>
-  assume H2:\<open>!x. P(x)\<close>
+proof (erule ex1newE)
+  assume 1:\<open>\<exists>x. P(x)\<close>
+  assume 2:\<open>!x. P(x)\<close>
   show \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
-  proof(rule exE[OF H1], rule exI, rule conjI, assumption)
+  proof(rule exE[OF 1], rule exI, rule conjI, assumption)
     fix x
     assume M:\<open>P(x)\<close>
     show \<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
-      by (rule allI, rule impI, erule only1E'[OF H2 _ M])
+    proof (rule allI, rule impI)
+      fix y
+      assume N:\<open>P(y)\<close>
+      show \<open>y=x\<close>
+      proof(rule only1E[OF 2])
+        assume K: \<open>(\<And>x y. P(x) \<Longrightarrow> P(y) \<Longrightarrow> x = y)\<close>
+        show \<open>y=x\<close> by (rule K[OF N M])
+      qed
+    qed
   qed
 qed
 
-lemma ex1oldI : \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x) \<Longrightarrow> \<exists>!x. P(x)\<close>
-proof(erule exE)
+lemma ex1oldI: \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x) \<Longrightarrow> \<exists>!x. P(x)\<close>
+proof (erule exE)
   fix x
-  assume K:\<open>P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
-  have Px:\<open>P(x)\<close> by (rule conjunct1[OF K])
-  have J:\<open>(\<forall>y. P(y) \<longrightarrow> y = x)\<close>
+  assume K: \<open>P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
+  have Px: \<open>P(x)\<close>
+    by (rule conjunct1[OF K])
+  have J: \<open>(\<forall>y. P(y) \<longrightarrow> y = x)\<close>
     by (rule conjunct2[OF K])
   show \<open>\<exists>!x. P(x)\<close>
-  proof(rule ex1badI)
-    show \<open>P(x)\<close> by (rule Px)
-  next
+  proof (rule ex1badI, rule Px)
     show\<open>(\<And>y. P(y) \<Longrightarrow> y = x)\<close>
       by (rule mp[OF spec[OF J]])
   qed
