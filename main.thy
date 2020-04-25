@@ -7,6 +7,8 @@ then define Von Neumann hierarchy
 then prove V=\<Union>(\<alpha>\<in>Ord).V\<alpha>
 trying to rewrite everything without replacement
 *)
+
+
 theorem nat_induct_bound :
   assumes H0:\<open>P(0)\<close>
   assumes H1:\<open>!!x. x\<in>nat \<Longrightarrow> P(x) \<Longrightarrow> P(succ(x))\<close>
@@ -280,7 +282,7 @@ proof(rule ballI)
     from H1 show \<open>n\<in>nat\<close> by assumption
   next
     show \<open>\<forall>m\<in>nat. m \<in> 0 \<or> m = 0 \<or> 0 \<in> m\<close>
-    proof 
+    proof
       fix m
       assume J:\<open>m\<in>nat\<close>
       show \<open> m \<in> 0 \<or> m = 0 \<or> 0 \<in> m\<close>
@@ -325,7 +327,7 @@ proof(rule ballI)
         next
           assume G:\<open>y \<in> x\<close>
           have R:\<open>succ(y) \<in> succ(x)\<close>
-            by (rule mp[OF bspec[OF bspec[OF le_succ K] H0] G])
+            by (rule mp[OF bspec[OF le_succ K] G])
           show \<open>succ(y) \<in> succ(x) \<or>
            succ(y) = succ(x) \<or>
            succ(x) \<in> succ(y)\<close>
@@ -912,9 +914,22 @@ lemma l6: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
     qed
   qed
 *)
-
+(*
+  fixes A a g
+  assumes H1:\<open>a \<in> A\<close>
+  assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
+*)
 theorem recursion:
   shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,g))\<close>
+(* where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close> *)
+(*
+  fixes A n a1 a2 g
+  assumes H11:\<open>a1 \<in> A\<close>
+  assumes H12:\<open>a2 \<in> A\<close>
+  assumes H2:\<open>g : ((A*n)\<rightarrow>A)\<close>
+theorem finite_recursion:
+  shows \<open>\<exists>!f. ((f \<in> (n\<rightarrow>A)) \<and> ((f`0) = a1) \<and> (f`n) = a2) \<and> satpc(f,n,g))\<close>
+*)
 proof 
   show \<open>\<exists>f. f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
   proof 
