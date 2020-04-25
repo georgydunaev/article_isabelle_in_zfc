@@ -313,30 +313,16 @@ lemma meta_eq_to_obj_eq: \<open>(A \<equiv> B) \<Longrightarrow> A = B\<close>
 lemma meta_eq_to_iff: \<open>x \<equiv> y \<Longrightarrow> x \<longleftrightarrow> y\<close>
   by unfold (rule iff_refl)
 
-subsection \<open>Unique existence\<close>
+subsection \<open>Only\<close>
 
-text \<open>
-  NOTE THAT the following 2 quantifications:
-
-    \<^item> \<open>\<exists>!x\<close> such that [\<open>\<exists>!y\<close> such that P(x,y)]   (sequential)
-    \<^item> \<open>\<exists>!x,y\<close> such that P(x,y)                   (simultaneous)
-
-  do NOT mean the same thing. The parser treats \<open>\<exists>!x y.P(x,y)\<close> as sequential.
-\<close>
+text \<open>\<close>
 
 lemma only1I: \<open>(\<And>x y. (\<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)) \<Longrightarrow> !x. P(x)\<close>
 proof (unfold only1_def)
   assume H:"(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)"
   show "\<forall>x y. P(x) \<and> P(y) \<longrightarrow> x = y"
-    by (rule allI, rule allI, rule impI, rule H,(
-        (rule conjunct1, assumption),
-        (rule conjunct2, assumption)))
-(*assumption,assumption)
-  show "\<forall>x y. P(x) \<and> P(y) \<longrightarrow> x = y"
-  proof (rule allI impI H | assumption )+
-    show \<open>\<And>x y. P(x) \<and> P(y) \<Longrightarrow> P(x)\<close> by (rule conjunct1)
-    show \<open>\<And>x y. P(x) \<and> P(y) \<Longrightarrow> P(y)\<close> by (rule conjunct2)
-  qed*)
+    by (rule allI, rule allI, rule impI, rule H,
+        erule conjunct1, erule conjunct2)
 qed
 
 lemma only1E': \<open>(!x. P(x)) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
@@ -349,7 +335,6 @@ proof (unfold only1_def)
     by (rule mp[OF spec[OF spec[OF H]] conjI[OF Px Py]])
 qed
 
-(*  \<open>\<exists>! x. P(x) \<Longrightarrow> ((\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> R) \<Longrightarrow> R\<close>*)
 lemma only1E:
   assumes major:\<open>! x. P(x)\<close>
       and r:\<open>(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> R\<close>
@@ -365,6 +350,7 @@ lemma only1E:
   apply(erule conjI, assumption)
   done
 *)
+
 lemma only1lem: 
   assumes H:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
   shows \<open>(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
@@ -396,27 +382,35 @@ proof -
     by(rule H[OF W K])
 qed
 
-lemma ex1newE1: 
-  assumes H:\<open>\<exists>!x. P(x)\<close>
-  shows \<open>\<exists>x. P(x)\<close>
-proof -
-  from H have \<open>(\<exists>x. P(x))\<and>(!x. P(x))\<close>
-    by(unfold ex1new_def)
-  then show \<open>\<exists>x. P(x)\<close>
-    by (rule conjunct1)
-qed
 
-lemma ex1newE2: 
-  assumes H:\<open>\<exists>!x. P(x)\<close>
-  shows \<open>!x. P(x)\<close>
-proof -
-  from H have \<open>(\<exists>x. P(x))\<and>(!x. P(x))\<close>
-    by(unfold ex1new_def)
-  then show \<open>!x. P(x)\<close>
-    by (rule conjunct2)
-qed
+subsection \<open>Unique existence\<close>
 
-lemma ex1I: 
+text \<open>
+  NOTE THAT the following 2 quantifications:
+
+    \<^item> \<open>\<exists>!x\<close> such that [\<open>\<exists>!y\<close> such that P(x,y)]   (sequential)
+    \<^item> \<open>\<exists>!x,y\<close> such that P(x,y)                   (simultaneous)
+
+  do NOT mean the same thing. The parser treats \<open>\<exists>!x y.P(x,y)\<close> as sequential.
+\<close>
+
+
+lemma ex1newI: \<open>\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> \<exists>! x. P(x)\<close>
+  by (unfold ex1new_def, rule conjI, assumption+)
+
+lemma ex1newE: \<open>\<exists>! x. P(x) \<Longrightarrow> (\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> R) \<Longrightarrow> R\<close>
+  apply (unfold ex1new_def)
+  apply (assumption | erule exE conjE)+
+  done
+
+
+lemma ex1newE1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
+  by (unfold ex1new_def, erule conjunct1)
+
+lemma ex1newE2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
+  by (erule ex1newE)
+
+lemma ex1badI: 
   assumes H1:\<open>P(a)\<close> 
     and H2:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
   shows \<open>\<exists>!x. P(x)\<close>
@@ -427,11 +421,6 @@ next
   show \<open>!x. P(x)\<close>
     by(rule only1I2, rule H2, assumption)
 qed
-
-lemma ex1newE: \<open>\<exists>! x. P(x) \<Longrightarrow> (\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> R) \<Longrightarrow> R\<close>
-  apply (unfold ex1new_def)
-  apply (assumption | erule exE conjE)+
-  done
 
 lemma ex1_def : \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x))\<close>
 proof(rule iff_reflection)
@@ -448,7 +437,7 @@ proof(rule iff_reflection)
         fix x
         assume M:\<open>P(x)\<close>
         show \<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
-          by (rule allI, rule impI, rule only1E[OF H2 _ M], assumption)
+          by (rule allI, rule impI, rule only1E'[OF H2 _ M], assumption)
       qed
     qed
   next
@@ -461,7 +450,7 @@ proof(rule iff_reflection)
       have J:\<open>(\<forall>y. P(y) \<longrightarrow> y = x)\<close> 
         by (rule conjunct2[OF K])
       show \<open>\<exists>!x. P(x)\<close>
-      proof(rule ex1I)
+      proof(rule ex1badI)
         show \<open>P(x)\<close> by (rule Px)
       next
         show\<open>(\<And>y. P(y) \<Longrightarrow> y = x)\<close>
