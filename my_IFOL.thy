@@ -92,8 +92,14 @@ definition Ex1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \
   where ex1_def: \<open>\<exists>!x. P(x) \<equiv> \<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
 *)
 
+(*
+abbreviation Only1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>!\<close> 10)
+  where \<open>!x. P(x) \<equiv> (\<forall>x.\<forall>y. P(x) \<and> P(y) \<longrightarrow> x = y)\<close>
+*)
+
 definition Only1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>!\<close> 10)
   where only1_def: \<open>!x. P(x) \<equiv> (\<forall>x.\<forall>y. P(x) \<and> P(y) \<longrightarrow> x = y)\<close>
+
 
 definition Ex1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>\<exists>!\<close> 10)
   where ex1new_def: \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x)) \<and> (!x. P(x))\<close>
@@ -366,6 +372,19 @@ proof -
     by(rule H[OF W K])
 qed
 *)
+lemma only1rearr : 
+  assumes 1: \<open>!x. P(x)\<close>
+  and M: \<open>P(x)\<close> 
+shows \<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
+proof (rule allI, rule impI)
+  fix y
+  assume N: \<open>P(y)\<close>
+  show \<open>y = x\<close>
+  proof(rule only1E[OF 1])
+    assume K: \<open>(\<And>x y. P(x) \<Longrightarrow> P(y) \<Longrightarrow> x = y)\<close>
+    show \<open>y = x\<close> by (rule K[OF N M])
+  qed
+qed
 
 subsection \<open>Unique existence\<close>
 
@@ -393,36 +412,21 @@ lemma ex1newE2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
   by (erule ex1newE)
 
 lemma ex1badI: 
-  assumes 1:\<open>P(a)\<close> 
-    and 2:\<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
+  assumes 1: \<open>P(a)\<close> 
+    and 2: \<open>(\<And>x. P(x) \<Longrightarrow> x = a)\<close>
   shows \<open>\<exists>!x. P(x)\<close>
 proof(rule ex1newI)
-  show \<open>\<exists>x. P(x)\<close>
-    by (rule exI, rule 1)
+  show \<open>\<exists>x. P(x)\<close> by (rule exI, rule 1)
 next
-  show \<open>!x. P(x)\<close>
-    by(rule only1I2, rule 2, assumption)
+  show \<open>!x. P(x)\<close> by (rule only1I2, rule 2, assumption)
 qed
 
 lemma ex1oldE: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
 proof (erule ex1newE)
-  assume 1:\<open>\<exists>x. P(x)\<close>
-  assume 2:\<open>!x. P(x)\<close>
+  assume 1: \<open>\<exists>x. P(x)\<close>
+  assume 2: \<open>!x. P(x)\<close>
   show \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x)\<close>
-  proof(rule exE[OF 1], rule exI, rule conjI, assumption)
-    fix x
-    assume M:\<open>P(x)\<close>
-    show \<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
-    proof (rule allI, rule impI)
-      fix y
-      assume N:\<open>P(y)\<close>
-      show \<open>y=x\<close>
-      proof(rule only1E[OF 2])
-        assume K: \<open>(\<And>x y. P(x) \<Longrightarrow> P(y) \<Longrightarrow> x = y)\<close>
-        show \<open>y=x\<close> by (rule K[OF N M])
-      qed
-    qed
-  qed
+    by(rule exE[OF 1], rule exI, rule conjI, assumption, erule only1rearr[OF 2])
 qed
 
 lemma ex1oldI: \<open>\<exists>x. P(x) \<and> (\<forall>y. P(y) \<longrightarrow> y = x) \<Longrightarrow> \<exists>!x. P(x)\<close>
@@ -450,13 +454,28 @@ lemma ex1I: \<open>P(a) \<Longrightarrow> (\<And>x. P(x) \<Longrightarrow> x = a
 
 
 text \<open>Sometimes easier to use: the premises have no shared variables. Safe!\<close>
+
 lemma ex_ex1I: \<open>\<exists>x. P(x) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> \<exists>!x. P(x)\<close>
+  by (erule ex1newI, erule only1I)
+
+
+lemma ex1E:
+  assumes 1:\<open>\<exists>! x. P(x)\<close>
+and 2:\<open>(\<And>x. \<lbrakk>P(x); \<forall>y. P(y) \<longrightarrow> y = x\<rbrakk> \<Longrightarrow> R)\<close>
+shows \<open>R\<close>
+  apply (rule ex1newE[OF 1])
+  apply (erule exE)
+  apply (rule 2, assumption)
+  done
+
+
+lemma ex_ex1I': \<open>\<exists>x. P(x) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> \<exists>!x. P(x)\<close>
   apply (erule exE)
   apply (rule ex1I)
    apply assumption
   apply assumption
   done
-
+ 
 lemma ex1E: \<open>\<exists>! x. P(x) \<Longrightarrow> (\<And>x. \<lbrakk>P(x); \<forall>y. P(y) \<longrightarrow> y = x\<rbrakk> \<Longrightarrow> R) \<Longrightarrow> R\<close>
   apply (unfold ex1_def)
   apply (assumption | erule exE conjE)+
