@@ -53,7 +53,7 @@ next
 qed
 
 (* Natural numbers are linearly ordered. *)
-theorem zeroleq : \<open>\<forall>n\<in>nat. 0\<in>n\<or>0=n\<close>
+theorem zeroleq : \<open>\<forall>n\<in>nat. 0\<in>n \<or> 0=n\<close>
 proof(rule ballI)
   fix n
   assume H1:\<open>n\<in>nat\<close>
@@ -356,19 +356,22 @@ proof(rule ballI)
   qed
 qed
 
+(* todo
 theorem nat_elem_is_ss:\<open>\<forall>m\<in>nat. n\<in>m \<longrightarrow> n\<subseteq>m\<close>
+proof(rule nat_induct_bound)
   sorry (**)
 
 theorem nat_ldfghj:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. n\<subseteq>m \<and> n\<noteq>m \<longrightarrow> n\<in>m\<close>
   sorry
+*)
 
 (*
 do it through ordinals.
 *)
-
+(*
 theorem nat_linord_ss:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<subseteq>n\<or>n\<subseteq>m\<close>
   sorry
-
+*)
 (* Union of compatible set of functions is a function. *)
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
   where "compat(f1,f2) == \<forall>x.\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
@@ -490,13 +493,86 @@ next
   qed
 qed
 
-lemma pcs_lem : \<open>compatset(pcs(A, a, g))\<close>
+
+lemma domainsubsetfunc : 
+  assumes Q:\<open>f1\<subseteq>f2\<close>
+  shows \<open>domain(f1)\<subseteq>domain(f2)\<close>
+proof
+  fix x
+  assume H:\<open>x \<in> domain(f1)\<close>
+  show \<open>x \<in> domain(f2)\<close>
+  proof(rule domainE[OF H])
+    fix y
+    assume W:\<open>\<langle>x, y\<rangle> \<in> f1\<close>
+    have \<open>\<langle>x, y\<rangle> \<in> f2\<close>
+      by(rule subsetD[OF Q W])     
+    then show \<open>x \<in> domain(f2)\<close>
+      by(rule domainI)
+  qed
+qed
+
+(*
+lemma 
+  assumes 1:\<open>q\<in>B\<close>
+  shows \<open>domain(A\<times>B) = A\<close>
+proof
+  show \<open>domain(A \<times> B) \<subseteq> A\<close>
+  proof(rule subsetI)
+    show \<open> \<And>x. x \<in> domain(A \<times> B) \<Longrightarrow>
+         x \<in> A\<close>
+      by auto
+  qed
+next
+show \<open>A \<subseteq> domain(A \<times> B)\<close>
+proof
+  show \<open>\<And>x. x \<in> A \<Longrightarrow>
+         x \<in> domain(A \<times> B)\<close>
+  proof(rule domainI,auto)
+    show \<open>q\<in>A\<close> by (rule 1)
+  sorry
+*)
+
+lemma natdomfunc:
+  assumes 1:\<open>q\<in>A\<close>
+  assumes J0:\<open>f1 \<in> Pow(nat \<times> A)\<close>
+  assumes U:\<open>m1 \<in> domain(f1)\<close>
+  shows \<open>m1\<in>nat\<close>
+proof -
+  from J0 have J0 : \<open>f1 \<subseteq> nat \<times> A\<close>
+    by auto
+  have J0:\<open>domain(f1) \<subseteq> domain(nat \<times> A)\<close>
+    by(rule func.domain_mono[OF J0])
+  have F:\<open>m1 \<in> domain(nat \<times> A)\<close>
+    by(rule subsetD[OF J0 U])
+  have R:\<open>domain(nat \<times> A) = nat\<close>
+    by (rule equalities.domain_of_prod[OF 1])
+  show \<open>m1 \<in> nat\<close>
+    by(rule subst[OF R], rule F)
+qed
+
+(* lemma domain_of_fun: "f \<in> Pi(A,B) ==> domain(f)=A" *)
+(*func.domain_type
+lemma wertyu:
+  assumes \<open>\<langle>x, y1\<rangle> \<in> f1\<close> 
+  and \<open>(f1:succ(m1)\<rightarrow>A)\<close>
+  shows \<open>x \<in> succ(m1)\<close>
+proof (rule domain_of_fun[OF ])
+
+lemma domain_of_fun: "f \<in> Pi(A,B) ==> domain(f)=A"
+by (unfold Pi_def, blast)
+*)
+
+lemma pcs_lem :
+  assumes 1:\<open>q\<in>A\<close>
+  shows \<open>compatset(pcs(A, a, g))\<close>
 proof (unfold compatset_def)
   show \<open>\<forall>f1\<in>pcs(A, a, g). \<forall>f2\<in>pcs(A, a, g). compat(f1, f2)\<close>
   proof(rule ballI, rule ballI)
     fix f1 f2
     assume H1:\<open>f1 \<in> pcs(A, a, g)\<close>
     then have H1':\<open>f1 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
+    hence H1'A:\<open>f1 \<in> Pow(nat*A)\<close> by auto
+    hence H1'A:\<open>f1 \<subseteq> (nat*A)\<close> by auto
     (*(t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,succ(m),g)*)
     assume H2:\<open>f2 \<in> pcs(A, a, g)\<close>
     then have H2':\<open>f2 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
@@ -524,30 +600,44 @@ proof (unfold compatset_def)
           (*have \<open>\<forall>n\<in>nat. P(n)\<close>
  func.apply_equality: \<langle>?a, ?b\<rangle> \<in> ?f \<Longrightarrow> ?f \<in> Pi(?A, ?B) \<Longrightarrow> ?f ` ?a = ?b
 *)
+          from K1' have K1'A:\<open>(f1:succ(m1)\<rightarrow>A)\<close> by auto
+          from K2' have K2'A:\<open>(f2:succ(m2)\<rightarrow>A)\<close> by auto
+          from K1'A have K1'AD:\<open>domain(f1) = succ(m1)\<close> 
+            by(rule domain_of_fun)
+          from K2'A have K2'AD:\<open>domain(f2) = succ(m2)\<close> 
+            by(rule domain_of_fun)
+
           have L1:\<open>f1`x=y1\<close>
-          proof(rule func.apply_equality[OF P1])
-            from K1' show \<open>(f1:succ(m1)\<rightarrow>A)\<close>  by auto
-          qed
+            by (rule func.apply_equality[OF P1], rule K1'A)
           have L2:\<open>f2`x=y2\<close>
-          proof(rule func.apply_equality[OF P2])
-            from K2' show \<open>(f2:succ(m2)\<rightarrow>A)\<close>  by auto
-          qed
+            by(rule func.apply_equality[OF P2], rule K2'A)
           have m1nat:\<open>m1\<in>nat\<close>
-            sorry
+          proof(rule natdomfunc[OF 1 J0])
+            show \<open>m1 \<in> domain(f1)\<close>
+              by (rule ssubst[OF K1'AD], auto)
+          qed
           have m2nat:\<open>m2\<in>nat\<close>
-            sorry
-          from J0  have KK:\<open>x\<in>nat\<close>
-            sorry
+          proof(rule natdomfunc[OF 1 J1])
+            show \<open>m2 \<in> domain(f2)\<close>
+              by (rule ssubst[OF K2'AD], auto)
+          qed
+            (* P1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close>
+               H1'A:\<open>f1 \<subseteq> (nat*A)\<close>
+            *)
+          have G1:\<open>\<langle>x, y1\<rangle> \<in> (nat*A)\<close>
+            by(rule subsetD[OF H1'A P1])
+          have KK:\<open>x\<in>nat\<close>
+            by(rule SigmaE[OF G1], auto)
 (* x is in  the domain of f1  ---- succ(m1)
 so we can have both  x \<in> ?m1.2 \<and> x \<in> ?m2.2 
 how to prove that m1 \<in> nat ? from J0 !  f1 is a subset of nat \<times> A *)
           have W:\<open>f1`x=f2`x\<close>
           proof(rule mp[OF bspec[OF pcs_ind KK] ]) (*good!*)
             show \<open>m1 \<in> nat\<close>
-              sorry
+              by (rule m1nat)
           next
             show \<open>m2 \<in> nat\<close>
-              sorry
+              by (rule m2nat)
           next
             show \<open>f1 \<in> succ(m1) -> A \<and>
     f1 ` 0 = a \<and> satpc(f1, m1, g)\<close>
@@ -557,8 +647,15 @@ how to prove that m1 \<in> nat ? from J0 !  f1 is a subset of nat \<times> A *)
     f2 ` 0 = a \<and> satpc(f2, m2, g)\<close>
               by (rule K2')
           next
+            (*  P1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close> 
+              K1'A:\<open>(f1:succ(m1)\<rightarrow>A)\<close>
+            *)
+            have U1:\<open>x \<in> succ(m1)\<close>
+              by (rule func.domain_type[OF P1 K1'A])
+            have U2:\<open>x \<in> succ(m2)\<close>
+              by (rule func.domain_type[OF P2 K2'A])
             show \<open>x \<in> succ(m1) \<and> x \<in> succ(m2)\<close>
-              sorry
+              by (rule conjI[OF U1 U2])
           qed
           from L1 and W and L2
           show \<open>y1 = y2\<close> by auto
@@ -866,7 +963,22 @@ qed
 (*sketch - *)
 
 lemma l6: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
-  sorry
+proof (unfold satpc_def)
+  show \<open>\<forall>n\<in>nat.
+       (\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+  proof (rule nat_induct_bound)
+    show \<open>(\<Union>pcs(A, a, g)) ` 1 = g ` \<langle>(\<Union>pcs(A, a, g)) ` 0, 0\<rangle>\<close>
+      sorry
+  next
+    fix x
+    assume 1: \<open>x\<in>nat\<close>
+    assume 2: \<open>(\<Union>pcs(A, a, g)) ` succ(x) =
+         g ` \<langle>(\<Union>pcs(A, a, g)) ` x, x\<rangle>\<close>
+    show \<open>(\<Union>pcs(A, a, g)) ` succ(succ(x)) =
+         g ` \<langle>(\<Union>pcs(A, a, g)) ` succ(x), succ(x)\<rangle>\<close>
+      sorry
+  qed
+qed
 
 (*
         have A1:\<open>\<Union>pcs(A,a,g)\<in>{f\<in>Pow(nat*A). nat\<subseteq>domain(f) & function(f)}\<close>
@@ -960,6 +1072,25 @@ next
 qed
 
 end
+
+(* Definition of addition *)
+(*
+locale rec_thm =
+  fixes A a g
+  assumes H1:\<open>a \<in> A\<close>
+  assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
+theorem recursion:
+  shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,g))\<close>
+  oops
+end
+*)
+
+definition add_g :: \<open>i\<close>
+  where add_g_def : \<open>add_g == {\<langle>x,x\<rangle>. x\<in>nat}\<close>
+(* {z \<in> nat*nat . \<langle>x,x\<rangle> } *)
+theorem addition:
+ \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,add_g))\<close>
+  oops
 
 definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ else _\<close>)
   where "fite(A, \<phi>, a, b) == \<Union>{x\<in>A.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
