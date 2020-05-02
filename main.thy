@@ -376,6 +376,42 @@ theorem nat_linord_ss:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<subseteq
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
   where "compat(f1,f2) == \<forall>x.\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
 
+lemma compatI:
+  assumes H:\<open>\<And>x y1 y2.\<lbrakk>\<langle>x,y1\<rangle> \<in> f1; \<langle>x,y2\<rangle> \<in> f2\<rbrakk>\<Longrightarrow>y1=y2\<close>
+  shows \<open>compat(f1,f2)\<close>
+proof(unfold compat_def)
+  show \<open>\<forall>x y1 y2. \<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2 \<longrightarrow> y1 = y2\<close>
+  proof(rule allI | rule impI)+
+    fix x y1 y2
+    assume K:\<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2\<close>
+    have K1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close> by (rule conjunct1[OF K])
+    have K2:\<open>\<langle>x, y2\<rangle> \<in> f2\<close> by (rule conjunct2[OF K])
+    show \<open>y1 = y2\<close> by (rule H[OF K1 K2])
+  qed
+qed
+
+lemma compatD:
+  assumes H: \<open>compat(f1,f2)\<close>
+  shows \<open>\<And>x y1 y2.\<lbrakk>\<langle>x,y1\<rangle> \<in> f1; \<langle>x,y2\<rangle> \<in> f2\<rbrakk>\<Longrightarrow>y1=y2\<close>
+proof -
+  fix x y1 y2
+  assume Q1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close>
+  assume Q2:\<open>\<langle>x, y2\<rangle> \<in> f2\<close>
+  from H have H:\<open>\<forall>x y1 y2. \<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2 \<longrightarrow> y1 = y2\<close>
+    by (unfold compat_def)
+  hence \<open>\<forall>y1 y2. \<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2 \<longrightarrow> y1 = y2\<close>
+    by (rule spec)
+  hence \<open>\<forall>y2. \<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2 \<longrightarrow> y1 = y2\<close>
+    by (rule spec)
+  hence H:\<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2 \<longrightarrow> y1 = y2\<close>
+    by (rule spec)
+  show \<open>y1=y2\<close>
+  proof(rule mp[OF H])
+    show \<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2\<close>
+      by(rule conjI[OF Q1 Q2])
+  qed
+qed
+
 definition compatset :: \<open>i\<Rightarrow>o\<close>
   where "compatset(S) == \<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)" 
 
@@ -425,14 +461,8 @@ proof(unfold function_def)
       assume K2:\<open>f2 \<in> S\<close>
       have R:\<open>\<forall>f2 \<in> S. compat(f1,f2)\<close> by (rule bspec[OF H0 K1])
       have R:\<open>compat(f1,f2)\<close> by (rule bspec[OF R K2])
-      from R have R:\<open>\<forall>x.
-        \<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (unfold compat_def)
-      find_theorems "_\<Longrightarrow>_\<in> domain(_)"
-      have R:\<open>\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule spec[OF R])
-      have R:\<open>\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule spec[OF R])
-      have R:\<open>\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2\<close> by (rule spec[OF R])
-      from J1 and J2 have J:\<open>\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2\<close> by (rule conjI)
-      show \<open>y1=y2\<close> by (rule mp[OF R J])
+      show \<open>y1=y2\<close>
+        by(rule compatD[OF R J1 J2])
     qed
   qed
 qed
@@ -909,6 +939,14 @@ proof
     by (rule zainupcs)
 qed
 
+lemma hhc : 
+  assumes 1:\<open>A\<subseteq>C\<close>
+  assumes 2:\<open>a\<in>C\<close>
+  shows \<open>cons(a,A)\<subseteq>C\<close>
+proof
+  from 1 and 2 show \<open>a \<in> C \<and> A \<subseteq> C\<close> by auto
+qed
+
 lemma l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
 proof
   fix x
@@ -944,6 +982,14 @@ proof
           hence E223:\<open>satpc(t,m,g)\<close> by auto
           hence E223:\<open>\<forall>n \<in> m . t`succ(n) = g ` <t`n, n>\<close>
             by(unfold satpc_def, auto)
+          from E22 have E221:\<open>(t:succ(m)\<rightarrow>A)\<close>
+            by auto
+          from E221 have domt:\<open>domain(t) = succ(m)\<close>
+            by (rule func.domain_of_fun)
+          from E1 have xind:\<open>x \<in> domain(t)\<close>
+            by (rule equalities.domainI)
+          from xind and domt have xinsm:\<open>x \<in> succ(m)\<close>
+            by auto
           show \<open>succ(x)\<in>domain(\<Union>pcs(A, a, g))\<close>
           proof
         (*proof(rule exE[OF E22])*)
@@ -952,11 +998,61 @@ proof
              (*t\<union>{\<langle>succ(x), g ` <t`x, x>\<rangle>}*)
               show \<open>cons(\<langle>succ(x), g ` <t`x, x>\<rangle>, t) \<in> pcs(A, a, g)\<close>
               proof(unfold pcs_def, rule CollectI)
+                from E21
+                have L1:\<open>t \<subseteq> nat \<times> A\<close>
+                  by auto
+                from Q1 have J1:\<open>succ(x)\<in>nat\<close>
+                  by auto(*Nat.nat_succI*)
+                have txA: \<open>t ` x \<in> A\<close>
+                  by (rule func.apply_type[OF E221 xinsm])
+                from txA and Q1 have txx:\<open>\<langle>t ` x, x\<rangle> \<in> A \<times> nat\<close>
+                  by auto
+                have secp: \<open>g ` \<langle>t ` x, x\<rangle> \<in> A\<close>
+                  by(rule func.apply_type[OF H2 txx])
+                from J1 and secp
+                have L2:\<open>\<langle>succ(x),g ` \<langle>t ` x, x\<rangle>\<rangle> \<in> nat \<times> A\<close>
+                  by auto
                 show \<open> cons(\<langle>succ(x),g ` \<langle>t ` x, x\<rangle>\<rangle>,t) \<in> Pow(nat \<times> A)\<close>
-                  sorry
-              next
+                proof(rule PowI)
+                  show \<open> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) \<subseteq> nat \<times> A\<close>
+                  proof
+                    show \<open>\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle> \<in> nat \<times> A \<and> t \<subseteq> nat \<times> A\<close>
+                      by (rule conjI[OF L2 L1])
+                  qed
+                qed
+              next 
                 show \<open>\<exists>m. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
-                  sorry
+                proof
+                  show \<open>partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(m), a, g)\<close>
+                  proof(unfold partcomp_def, 
+                      rule conjI)
+(*func.fun_extend3:
+    ?f \<in> ?A \<rightarrow> ?B \<Longrightarrow>
+    ?c \<notin> ?A \<Longrightarrow> ?b \<in> ?B \<Longrightarrow> cons(\<langle>?c, ?b\<rangle>, ?f) \<in> cons(?c, ?A) \<rightarrow> ?B
+*)                  have ljk:\<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) \<in> (cons(succ(m),succ(m)) \<rightarrow> A)\<close>
+                    proof(rule func.fun_extend3) 
+                      show \<open>t \<in> succ(m) \<rightarrow> A\<close>
+                        sorry
+                      show \<open>succ(m) \<notin> succ(m)\<close>
+                        sorry
+                      show \<open>g ` \<langle>t ` m, m\<rangle> \<in> A\<close>
+                        sorry
+                    qed
+                    have \<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) \<in> (cons(succ(m),succ(m)) \<rightarrow> A)\<close>
+                      sorry
+                    show \<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) \<in> (succ(succ(m)) \<rightarrow> A)\<close>
+                      sorry
+                  next
+                    show \<open> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) ` 0 = a \<and> satpc(cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(m), g)\<close>
+                    proof
+                      show \<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) ` 0 = a\<close>
+                        sorry
+                    next
+                      show \<open> satpc(cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(m), g)\<close>
+                        sorry
+                    qed
+                  qed
+                qed
               qed
             next
               show \<open>\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle> \<in> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t)\<close>
