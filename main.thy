@@ -921,7 +921,56 @@ proof
     assume Q1:\<open>x\<in>nat\<close>
     assume Q2:\<open>x\<in>domain(\<Union>pcs(A, a, g))\<close>
     show \<open>succ(x)\<in>domain(\<Union>pcs(A, a, g))\<close>
-      sorry
+    proof(rule domainE[OF Q2])
+      fix y
+      assume W1:\<open>\<langle>x, y\<rangle> \<in> (\<Union>pcs(A, a, g))\<close>
+      show \<open>succ(x)\<in>domain(\<Union>pcs(A, a, g))\<close>
+      proof(rule UnionE[OF W1])
+        fix t
+        assume E1:\<open>\<langle>x, y\<rangle> \<in> t\<close>
+        assume E2:\<open>t \<in> pcs(A, a, g)\<close>
+        hence E2:\<open>t\<in>{t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> 
+          by(unfold pcs_def)
+        have E21:\<open>t\<in>Pow(nat*A)\<close>
+          by(rule CollectD1[OF E2])
+        have E22:\<open>\<exists>m. partcomp(A,t,m,a,g)\<close>
+          by(rule CollectD2[OF E2])
+        show \<open>succ(x)\<in>domain(\<Union>pcs(A, a, g))\<close>
+        proof(rule exE[OF E22])
+          fix m
+          assume E22:\<open>partcomp(A,t,m,a,g)\<close>
+          hence E22:\<open>((t:succ(m)\<rightarrow>A) \<and> (t`0=a)) \<and> satpc(t,m,g)\<close> 
+            by(unfold partcomp_def, auto)
+          hence E223:\<open>satpc(t,m,g)\<close> by auto
+          hence E223:\<open>\<forall>n \<in> m . t`succ(n) = g ` <t`n, n>\<close>
+            by(unfold satpc_def, auto)
+          show \<open>succ(x)\<in>domain(\<Union>pcs(A, a, g))\<close>
+          proof
+        (*proof(rule exE[OF E22])*)
+            show \<open> \<langle>succ(x), g ` <t`x, x>\<rangle> \<in> (\<Union>pcs(A, a, g))\<close> (*?*)
+            proof
+             (*t\<union>{\<langle>succ(x), g ` <t`x, x>\<rangle>}*)
+              show \<open>cons(\<langle>succ(x), g ` <t`x, x>\<rangle>, t) \<in> pcs(A, a, g)\<close>
+              proof(unfold pcs_def, rule CollectI)
+                show \<open> cons(\<langle>succ(x),g ` \<langle>t ` x, x\<rangle>\<rangle>,t) \<in> Pow(nat \<times> A)\<close>
+                  sorry
+              next
+                show \<open>\<exists>m. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
+                  sorry
+              qed
+            next
+              show \<open>\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle> \<in> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t)\<close>
+                by auto
+            qed
+(*
+  where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
+  where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,m,g)\<close>
+  where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
+*)
+          qed
+        qed
+      qed
+    qed
   next
     show \<open>0 \<in> domain(\<Union>pcs(A, a, g))\<close>
       by (rule l2')
