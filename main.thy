@@ -399,21 +399,28 @@ proof -
   assume Q2:\<open>\<langle>x, y2\<rangle> \<in> f2\<close>
   from H have H:\<open>\<forall>x y1 y2. \<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2 \<longrightarrow> y1 = y2\<close>
     by (unfold compat_def)
-  hence \<open>\<forall>y1 y2. \<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2 \<longrightarrow> y1 = y2\<close>
-    by (rule spec)
-  hence \<open>\<forall>y2. \<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2 \<longrightarrow> y1 = y2\<close>
-    by (rule spec)
-  hence H:\<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2 \<longrightarrow> y1 = y2\<close>
-    by (rule spec)
   show \<open>y1=y2\<close>
-  proof(rule mp[OF H])
+  proof(rule mp[OF spec[OF spec[OF spec[OF H]]]])
     show \<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2\<close>
       by(rule conjI[OF Q1 Q2])
   qed
 qed
 
 definition compatset :: \<open>i\<Rightarrow>o\<close>
-  where "compatset(S) == \<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)" 
+  where "compatset(S) == \<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)"
+
+lemma compatsetD:
+  assumes H: \<open>compatset(S)\<close>
+  shows \<open>\<And>f1 f2.\<lbrakk>f1\<in>S; f2\<in>S\<rbrakk>\<Longrightarrow>compat(f1,f2)\<close>
+proof -
+  fix f1 f2
+  assume H1:\<open>f1\<in>S\<close>
+  assume H2:\<open>f2\<in>S\<close>
+  from H have H:\<open>\<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)\<close>
+    by (unfold compatset_def)
+  show \<open>compat(f1,f2)\<close>
+    by (rule bspec[OF bspec[OF H H1] H2])
+qed
 
 theorem upairI1 : \<open>a \<in> {a, b}\<close>
 proof
@@ -445,7 +452,6 @@ theorem compatsetunionfun :
   assumes H0:\<open>compatset(S)\<close>
   shows \<open>function(\<Union>S)\<close>
 proof(unfold function_def)
-  from H0 have H0:\<open>\<forall>f1 \<in> S. \<forall>f2 \<in> S. compat(f1,f2)\<close> by (unfold compatset_def)
   show \<open> \<forall>x y1. \<langle>x, y1\<rangle> \<in> \<Union>S \<longrightarrow> 
           (\<forall>y2. \<langle>x, y2\<rangle> \<in> \<Union>S \<longrightarrow> y1 = y2)\<close>
   proof(rule allI, rule allI, rule impI, rule allI, rule impI)
@@ -459,8 +465,8 @@ proof(unfold function_def)
       assume J2:\<open>\<langle>x, y2\<rangle> \<in> f2\<close>
       assume K1:\<open>f1 \<in> S\<close>
       assume K2:\<open>f2 \<in> S\<close>
-      have R:\<open>\<forall>f2 \<in> S. compat(f1,f2)\<close> by (rule bspec[OF H0 K1])
-      have R:\<open>compat(f1,f2)\<close> by (rule bspec[OF R K2])
+      have R:\<open>compat(f1,f2)\<close> 
+        by (rule compatsetD[OF H0 K1 K2])
       show \<open>y1=y2\<close>
         by(rule compatD[OF R J1 J2])
     qed
@@ -592,103 +598,104 @@ lemma domain_of_fun: "f \<in> Pi(A,B) ==> domain(f)=A"
 by (unfold Pi_def, blast)
 *)
 
+lemma compatsetI :
+  assumes 1:\<open>\<And>f1 f2. \<lbrakk>f1\<in>S;f2\<in>S\<rbrakk> \<Longrightarrow> compat(f1,f2)\<close>
+  shows \<open>compatset(S)\<close>
+  by (unfold compatset_def, rule ballI, rule ballI, rule 1, assumption+)
+
 lemma pcs_lem :
   assumes 1:\<open>q\<in>A\<close>
   shows \<open>compatset(pcs(A, a, g))\<close>
-proof (unfold compatset_def)
-  show \<open>\<forall>f1\<in>pcs(A, a, g). \<forall>f2\<in>pcs(A, a, g). compat(f1, f2)\<close>
-  proof(rule ballI, rule ballI)
-    fix f1 f2
-    assume H1:\<open>f1 \<in> pcs(A, a, g)\<close>
-    then have H1':\<open>f1 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
-    hence H1'A:\<open>f1 \<in> Pow(nat*A)\<close> by auto
-    hence H1'A:\<open>f1 \<subseteq> (nat*A)\<close> by auto
+proof (rule compatsetI)
+  fix f1 f2
+  assume H1:\<open>f1 \<in> pcs(A, a, g)\<close>
+  then have H1':\<open>f1 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
+  hence H1'A:\<open>f1 \<in> Pow(nat*A)\<close> by auto
+  hence H1'A:\<open>f1 \<subseteq> (nat*A)\<close> by auto
     (*(t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,succ(m),g)*)
-    assume H2:\<open>f2 \<in> pcs(A, a, g)\<close>
-    then have H2':\<open>f2 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
-    show \<open>compat(f1, f2)\<close>
-    proof(unfold compat_def, rule allI, rule allI, rule allI, rule impI)
-      fix x y1 y2
-      assume P:\<open>\<langle>x, y1\<rangle> \<in> f1 \<and> \<langle>x, y2\<rangle> \<in> f2\<close>
-      from P have P1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close> by (rule conjunct1)
-      from P have P2:\<open>\<langle>x, y2\<rangle> \<in> f2\<close> by (rule conjunct2)
+  assume H2:\<open>f2 \<in> pcs(A, a, g)\<close>
+  then have H2':\<open>f2 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
+  show \<open>compat(f1, f2)\<close>
+  proof(rule compatI)
+    fix x y1 y2
+    assume P1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close>
+    assume P2:\<open>\<langle>x, y2\<rangle> \<in> f2\<close>
+    show \<open>y1 = y2\<close>
+    proof(rule CollectE[OF H1'], rule CollectE[OF H2'])
+      assume J0:\<open>f1 \<in> Pow(nat \<times> A)\<close>
+      assume J1:\<open>f2 \<in> Pow(nat \<times> A)\<close>
+      assume J2:\<open>\<exists>m. partcomp(A, f1, m, a, g)\<close>
+      assume J3:\<open>\<exists>m. partcomp(A, f2, m, a, g)\<close>
       show \<open>y1 = y2\<close>
-      proof(rule CollectE[OF H1'], rule CollectE[OF H2'])
-        assume J0:\<open>f1 \<in> Pow(nat \<times> A)\<close>
-        assume J1:\<open>f2 \<in> Pow(nat \<times> A)\<close>
-        assume J2:\<open>\<exists>m. partcomp(A, f1, m, a, g)\<close>
-        assume J3:\<open>\<exists>m. partcomp(A, f2, m, a, g)\<close>
-        show \<open>y1 = y2\<close>
-        proof(rule exE[OF J2], rule exE[OF J3])
-          fix m1 m2
-          assume K1:\<open>partcomp(A, f1, m1, a, g)\<close>
-          hence K1':\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
-            by (unfold partcomp_def)
-          assume K2:\<open>partcomp(A, f2, m2, a, g)\<close>
-          hence K2':\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,m2,g)\<close>
-            by (unfold partcomp_def)
+      proof(rule exE[OF J2], rule exE[OF J3])
+        fix m1 m2
+        assume K1:\<open>partcomp(A, f1, m1, a, g)\<close>
+        hence K1':\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
+          by (unfold partcomp_def)
+        assume K2:\<open>partcomp(A, f2, m2, a, g)\<close>
+        hence K2':\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,m2,g)\<close>
+          by (unfold partcomp_def)
           (*have \<open>\<forall>n\<in>nat. P(n)\<close>
  func.apply_equality: \<langle>?a, ?b\<rangle> \<in> ?f \<Longrightarrow> ?f \<in> Pi(?A, ?B) \<Longrightarrow> ?f ` ?a = ?b
 *)
-          from K1' have K1'A:\<open>(f1:succ(m1)\<rightarrow>A)\<close> by auto
-          from K2' have K2'A:\<open>(f2:succ(m2)\<rightarrow>A)\<close> by auto
-          from K1'A have K1'AD:\<open>domain(f1) = succ(m1)\<close> 
-            by(rule domain_of_fun)
-          from K2'A have K2'AD:\<open>domain(f2) = succ(m2)\<close> 
-            by(rule domain_of_fun)
-
-          have L1:\<open>f1`x=y1\<close>
-            by (rule func.apply_equality[OF P1], rule K1'A)
-          have L2:\<open>f2`x=y2\<close>
-            by(rule func.apply_equality[OF P2], rule K2'A)
-          have m1nat:\<open>m1\<in>nat\<close>
-          proof(rule natdomfunc[OF 1 J0])
-            show \<open>m1 \<in> domain(f1)\<close>
-              by (rule ssubst[OF K1'AD], auto)
-          qed
-          have m2nat:\<open>m2\<in>nat\<close>
-          proof(rule natdomfunc[OF 1 J1])
-            show \<open>m2 \<in> domain(f2)\<close>
-              by (rule ssubst[OF K2'AD], auto)
-          qed
+        from K1' have K1'A:\<open>(f1:succ(m1)\<rightarrow>A)\<close> by auto
+        from K2' have K2'A:\<open>(f2:succ(m2)\<rightarrow>A)\<close> by auto
+        from K1'A have K1'AD:\<open>domain(f1) = succ(m1)\<close> 
+          by(rule domain_of_fun)
+        from K2'A have K2'AD:\<open>domain(f2) = succ(m2)\<close>
+          by(rule domain_of_fun)
+        have L1:\<open>f1`x=y1\<close>
+          by (rule func.apply_equality[OF P1], rule K1'A)
+        have L2:\<open>f2`x=y2\<close>
+          by(rule func.apply_equality[OF P2], rule K2'A)
+        have m1nat:\<open>m1\<in>nat\<close>
+        proof(rule natdomfunc[OF 1 J0])
+          show \<open>m1 \<in> domain(f1)\<close>
+            by (rule ssubst[OF K1'AD], auto)
+        qed
+        have m2nat:\<open>m2\<in>nat\<close>
+        proof(rule natdomfunc[OF 1 J1])
+          show \<open>m2 \<in> domain(f2)\<close>
+            by (rule ssubst[OF K2'AD], auto)
+        qed
             (* P1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close>
                H1'A:\<open>f1 \<subseteq> (nat*A)\<close>
             *)
-          have G1:\<open>\<langle>x, y1\<rangle> \<in> (nat*A)\<close>
-            by(rule subsetD[OF H1'A P1])
-          have KK:\<open>x\<in>nat\<close>
-            by(rule SigmaE[OF G1], auto)
+        have G1:\<open>\<langle>x, y1\<rangle> \<in> (nat*A)\<close>
+          by(rule subsetD[OF H1'A P1])
+        have KK:\<open>x\<in>nat\<close>
+          by(rule SigmaE[OF G1], auto)
 (* x is in  the domain of f1  ---- succ(m1)
 so we can have both  x \<in> ?m1.2 \<and> x \<in> ?m2.2 
 how to prove that m1 \<in> nat ? from J0 !  f1 is a subset of nat \<times> A *)
-          have W:\<open>f1`x=f2`x\<close>
-          proof(rule mp[OF bspec[OF pcs_ind KK] ]) (*good!*)
-            show \<open>m1 \<in> nat\<close>
-              by (rule m1nat)
-          next
-            show \<open>m2 \<in> nat\<close>
-              by (rule m2nat)
-          next
-            show \<open>f1 \<in> succ(m1) -> A \<and>
+        have W:\<open>f1`x=f2`x\<close>
+        proof(rule mp[OF bspec[OF pcs_ind KK] ]) (*good!*)
+          show \<open>m1 \<in> nat\<close>
+            by (rule m1nat)
+        next
+          show \<open>m2 \<in> nat\<close>
+            by (rule m2nat)
+        next
+          show \<open>f1 \<in> succ(m1) -> A \<and>
     f1 ` 0 = a \<and> satpc(f1, m1, g)\<close>
-              by (rule K1')
-          next
-            show \<open>f2 \<in> succ(m2) -> A \<and>
+            by (rule K1')
+        next
+          show \<open>f2 \<in> succ(m2) -> A \<and>
     f2 ` 0 = a \<and> satpc(f2, m2, g)\<close>
-              by (rule K2')
-          next
+            by (rule K2')
+        next
             (*  P1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close> 
               K1'A:\<open>(f1:succ(m1)\<rightarrow>A)\<close>
             *)
-            have U1:\<open>x \<in> succ(m1)\<close>
-              by (rule func.domain_type[OF P1 K1'A])
-            have U2:\<open>x \<in> succ(m2)\<close>
-              by (rule func.domain_type[OF P2 K2'A])
-            show \<open>x \<in> succ(m1) \<and> x \<in> succ(m2)\<close>
-              by (rule conjI[OF U1 U2])
-          qed
-          from L1 and W and L2
-          show \<open>y1 = y2\<close> by auto
+          have U1:\<open>x \<in> succ(m1)\<close>
+            by (rule func.domain_type[OF P1 K1'A])
+          have U2:\<open>x \<in> succ(m2)\<close>
+            by (rule func.domain_type[OF P2 K2'A])
+          show \<open>x \<in> succ(m1) \<and> x \<in> succ(m2)\<close>
+            by (rule conjI[OF U1 U2])
+        qed
+        from L1 and W and L2
+        show \<open>y1 = y2\<close> by auto
 (*
   shows \<open>\<forall>n\<in>nat. n\<in>m1 \<and> n\<in>m2 \<longrightarrow> f1`n = f2`n\<close>
  x < succ(m1) & x < succ(m2)
@@ -698,7 +705,6 @@ nat_induct_bound :
   assumes H1:\<open>!!x. x\<in>nat \<Longrightarrow> P(x) \<Longrightarrow> P(succ(x))\<close>
   shows \<open>\<forall>n\<in>nat. P(n)\<close>
 *)
-        qed
       qed
     qed
   qed
