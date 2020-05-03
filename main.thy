@@ -1018,10 +1018,99 @@ begin
 end*)
 
 lemma shortlem :
-  assumes H1:\<open>partcomp(A,t,m,a,g)\<close>
-  shows \<open>partcomp(A,t,m,a,g)\<close>
-proof 
-  oops
+  assumes mnat:\<open>m\<in>nat\<close>
+  assumes H:\<open>partcomp(A,t,m,a,g)\<close>
+  shows \<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close>
+proof(rule partcompE[OF H])
+  assume H1:\<open>t \<in> succ(m) \<rightarrow> A\<close>
+  assume H2:\<open>t ` 0 = a\<close>
+  assume H3:\<open>satpc(t, m, g)\<close>
+  show \<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close>
+  proof
+    show \<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) \<in> succ(succ(m)) \<rightarrow> A\<close>
+      sorry
+    show \<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` 0 = a\<close>
+    proof(rule trans, rule func.fun_extend_apply[OF H1])
+      show \<open>succ(m) \<notin> succ(m)\<close> by (rule  upair.mem_not_refl)
+      show \<open>(if 0 = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` 0) = a\<close>
+        by(rule trans, rule upair.if_not_P, auto, rule H2)
+    qed
+    show \<open>satpc(cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t), succ(m), g)\<close>
+    proof(unfold satpc_def, rule ballI)
+      fix n
+      assume Q:\<open>n \<in> succ(m)\<close>
+      show \<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` succ(n) 
+= g ` \<langle>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n, n\<rangle>\<close>
+      proof(rule trans, rule func.fun_extend_apply[OF H1], rule upair.mem_not_refl)
+        show \<open>(if succ(n) = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` succ(n)) =
+    g ` \<langle>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n, n\<rangle>\<close>
+        proof(rule upair.succE[OF Q])
+          assume Y:\<open>n=m\<close>
+          show \<open>(if succ(n) = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` succ(n)) =
+    g ` \<langle>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n, n\<rangle>\<close>
+          proof(rule trans, rule upair.if_P)
+            from Y show \<open>succ(n) = succ(m)\<close> by auto
+          next
+            have L1:\<open>t ` m = cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n\<close>
+            proof(rule sym, rule trans, rule func.fun_extend_apply[OF H1], rule upair.mem_not_refl) 
+              show \<open> (if n = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` n) = t ` m\<close>
+              proof(rule trans, rule upair.if_not_P)
+                from Y show \<open>t ` n = t ` m\<close> by auto
+                show \<open>n \<noteq> succ(m)\<close>
+                proof(rule not_sym)
+                  show \<open>succ(m) \<noteq> n\<close>
+                    by(rule subst, rule sym, rule Y, rule upair.succ_neq_self)
+                qed
+              qed
+            qed
+            from Y
+            have L2:\<open>m = n\<close>
+              by auto
+            have L:\<open> \<langle>t ` m, m\<rangle> = \<langle>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n, n\<rangle>\<close>
+              by(rule subst_context2[OF L1 L2])
+            show \<open> g ` \<langle>t ` m, m\<rangle> = g ` \<langle>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n, n\<rangle>\<close>
+              by(rule subst_context[OF L])
+          qed
+        next
+          assume Y:\<open>n \<in> m\<close>
+          show \<open>(if succ(n) = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` succ(n)) =
+                g ` \<langle>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n, n\<rangle>\<close>
+          proof(rule trans, rule upair.if_not_P)
+            show \<open>succ(n) \<noteq> succ(m)\<close>
+              by(rule contrapos, rule upair.mem_imp_not_eq, rule Y, rule upair.succ_inject, assumption)
+          next
+(* upair.succ_inject: succ(?m) = succ(?n) \<Longrightarrow> ?m = ? *)
+            have X:\<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n = t ` n\<close>
+            proof(rule trans, rule func.fun_extend_apply[OF H1], rule upair.mem_not_refl)
+              show \<open>(if n = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` n) = t ` n\<close>
+              proof(rule upair.if_not_P)
+                show \<open>n \<noteq> succ(m)\<close>
+                proof(rule contrapos)
+                  assume q:"n=succ(m)"
+                  from q and Y have M:\<open>succ(m)\<in>m\<close>
+                    by auto
+                  (*  Nat.succ_in_naturalD: succ(?i) \<in> ?k \<Longrightarrow> ?k \<in> nat \<Longrightarrow> ?i \<in> ?k *)
+                  show \<open>m\<in>m\<close>
+                    by(rule Nat.succ_in_naturalD[OF M mnat])
+                next
+                  show \<open>m \<notin> m\<close> by (rule  upair.mem_not_refl)
+                qed
+              qed
+            qed
+            from H3
+            have W:\<open>\<forall>n\<in>m. t ` succ(n) = g ` \<langle>t ` n, n\<rangle>\<close>
+              by (unfold satpc_def)
+            have U:\<open>t ` succ(n) = g ` \<langle>t ` n, n\<rangle>\<close>
+              by (rule bspec[OF W Y])
+            show \<open>t ` succ(n) = g ` \<langle>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n, n\<rangle>\<close>
+              by (rule trans, rule U, rule sym, rule subst_context[OF X])
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
 
 lemma shortlem  :
   assumes H:\<open>t \<in> pcs(A, a, g)\<close>
