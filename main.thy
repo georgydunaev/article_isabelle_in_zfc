@@ -376,7 +376,7 @@ theorem nat_linord_ss:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<subseteq
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
   where "compat(f1,f2) == \<forall>x.\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
 
-lemma compatI:
+lemma compatI [intro]:
   assumes H:\<open>\<And>x y1 y2.\<lbrakk>\<langle>x,y1\<rangle> \<in> f1; \<langle>x,y2\<rangle> \<in> f2\<rbrakk>\<Longrightarrow>y1=y2\<close>
   shows \<open>compat(f1,f2)\<close>
 proof(unfold compat_def)
@@ -406,10 +406,17 @@ proof -
   qed
 qed
 
+lemma compatE:
+  assumes H: \<open>compat(f1,f2)\<close>
+  and W:\<open>(\<And>x y1 y2.\<lbrakk>\<langle>x,y1\<rangle> \<in> f1; \<langle>x,y2\<rangle> \<in> f2\<rbrakk>\<Longrightarrow>y1=y2) \<Longrightarrow> E\<close>
+shows \<open>E\<close>
+  by (rule W, rule compatD[OF H], assumption+)
+
+
 definition compatset :: \<open>i\<Rightarrow>o\<close>
   where "compatset(S) == \<forall>f1\<in>S.\<forall>f2\<in>S. compat(f1,f2)"
 
-lemma compatsetI :
+lemma compatsetI [intro] :
   assumes 1:\<open>\<And>f1 f2. \<lbrakk>f1\<in>S;f2\<in>S\<rbrakk> \<Longrightarrow> compat(f1,f2)\<close>
   shows \<open>compatset(S)\<close>
   by (unfold compatset_def, rule ballI, rule ballI, rule 1, assumption+)
@@ -426,6 +433,12 @@ proof -
   show \<open>compat(f1,f2)\<close>
     by (rule bspec[OF bspec[OF H H1] H2])
 qed
+
+lemma compatsetE:
+  assumes H: \<open>compatset(S)\<close>
+  and W:\<open>(\<And>f1 f2.\<lbrakk>f1\<in>S; f2\<in>S\<rbrakk>\<Longrightarrow>compat(f1,f2)) \<Longrightarrow> E\<close>
+shows \<open>E\<close>
+  by (rule W, rule compatsetD[OF H], assumption+)
 
 theorem upairI1 : \<open>a \<in> {a, b}\<close>
 proof
@@ -489,7 +502,7 @@ definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
 definition partcomp :: \<open>[i,i,i,i,i]\<Rightarrow>o\<close>
   where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,m,g)\<close>
 
-lemma partcompI:
+lemma partcompI [intro]:
   assumes H1:\<open>(t:succ(m)\<rightarrow>A)\<close>
   assumes H2:\<open>(t`0=a)\<close>
   assumes H3:\<open>satpc(t,m,g)\<close>
@@ -509,7 +522,7 @@ lemma partcompD2: \<open>partcomp(A,t,m,a,g) \<Longrightarrow> (t`0=a)\<close>
 lemma partcompD3: \<open>partcomp(A,t,m,a,g) \<Longrightarrow> satpc(t,m,g)\<close>
   by (unfold partcomp_def, auto)
 
-lemma partcompE: 
+lemma partcompE [elim] : 
   assumes 1:\<open>partcomp(A,t,m,a,g)\<close>
     and 2:\<open>\<lbrakk>(t:succ(m)\<rightarrow>A) ; (t`0=a) ; satpc(t,m,g)\<rbrakk> \<Longrightarrow> E\<close>
   shows \<open>E\<close>
@@ -529,20 +542,26 @@ assumes H1:\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1
 *)
   assumes H1: \<open>partcomp(A,f1,m1,a,g)\<close>
   assumes H2: \<open>partcomp(A,f2,m2,a,g)\<close>
-shows \<open>\<forall>n\<in>nat. n\<in>succ(m1) \<and> n\<in>succ(m2) \<longrightarrow> f1`n = f2`n\<close>
+  shows \<open>\<forall>n\<in>nat. n\<in>succ(m1) \<and> n\<in>succ(m2) \<longrightarrow> f1`n = f2`n\<close>
+proof(rule partcompE[OF H1], rule partcompE[OF H2])
+  assume H11:\<open>f1 \<in> succ(m1) \<rightarrow> A\<close>
+  assume H12:\<open>f1 ` 0 = a \<close>
+  assume H13:\<open>satpc(f1, m1, g)\<close>
+  assume H21:\<open>f2 \<in> succ(m2) \<rightarrow> A\<close>
+  assume H22:\<open>f2 ` 0 = a\<close>
+  assume H23:\<open>satpc(f2, m2, g)\<close>
+  show \<open>\<forall>n\<in>nat. n\<in>succ(m1) \<and> n\<in>succ(m2) \<longrightarrow> f1`n = f2`n\<close>
 proof(rule nat_induct_bound)
-  have H1:\<open>(f1`0=a)\<close> by (rule partcompD2[OF H1])
-  have H2:\<open>(f2`0=a)\<close> by (rule partcompD2[OF H2])
-  from H1 and H2
+  from H12 and H22
   show \<open>0\<in>succ(m1) \<and> 0\<in>succ(m2) \<longrightarrow> f1 ` 0 = f2 ` 0\<close>
     by auto
 next
   fix x
   assume J0:\<open>x\<in>nat\<close>
   assume J1:\<open>x \<in> succ(m1) \<and> x \<in> succ(m2) \<longrightarrow> f1 ` x = f2 ` x\<close>
-  have G1:\<open>\<forall>n \<in> m1 . f1`succ(n) = g ` <f1`n, n>\<close> 
-    by (rule partcompD3[OF H1],  unfold satpc_def, auto)
-  from H2 have G2:\<open>\<forall>n \<in> m2 . f2`succ(n) = g ` <f2`n, n>\<close> 
+  from H13 have G1:\<open>\<forall>n \<in> m1 . f1`succ(n) = g ` <f1`n, n>\<close>
+    by (unfold satpc_def, auto)
+  from H23 have G2:\<open>\<forall>n \<in> m2 . f2`succ(n) = g ` <f2`n, n>\<close> 
     by (unfold satpc_def, auto)
   show \<open>succ(x) \<in> succ(m1) \<and> succ(x) \<in> succ(m2) \<longrightarrow> 
         f1 ` succ(x) = f2 ` succ(x)\<close>
@@ -568,7 +587,7 @@ next
       by auto
   qed
 qed
-
+qed
 
 lemma domainsubsetfunc : 
   assumes Q:\<open>f1\<subseteq>f2\<close>
@@ -641,7 +660,7 @@ by (unfold Pi_def, blast)
 lemma pcs_lem :
   assumes 1:\<open>q\<in>A\<close>
   shows \<open>compatset(pcs(A, a, g))\<close>
-proof (rule compatsetI)
+proof (*(rule compatsetI)*)
   fix f1 f2
   assume H1:\<open>f1 \<in> pcs(A, a, g)\<close>
   then have H1':\<open>f1 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
@@ -709,13 +728,11 @@ how to prove that m1 \<in> nat ? from J0 !  f1 is a subset of nat \<times> A *)
           show \<open>m2 \<in> nat\<close>
             by (rule m2nat)
         next
-          show \<open>f1 \<in> succ(m1) -> A \<and>
-    f1 ` 0 = a \<and> satpc(f1, m1, g)\<close>
-            by (rule K1')
+          show \<open>partcomp(A, f1, m1, a, g)\<close>
+            by (rule K1)
         next
-          show \<open>f2 \<in> succ(m2) -> A \<and>
-    f2 ` 0 = a \<and> satpc(f2, m2, g)\<close>
-            by (rule K2')
+          show \<open>partcomp(A, f2, m2, a, g)\<close>
+            by (rule K2)
         next
             (*  P1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close> 
               K1'A:\<open>(f1:succ(m1)\<rightarrow>A)\<close>
@@ -831,6 +848,9 @@ locale rec_thm =
   assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
 begin
 
+lemma l3:\<open>function(\<Union>pcs(A, a, g))\<close>
+  by (rule compatsetunionfun, rule pcs_lem, rule H1)
+
 lemma l1 : \<open>\<Union>pcs(A, a, g) \<subseteq> nat \<times> A\<close>
 proof
   fix x
@@ -899,11 +919,13 @@ proof(unfold satpc_def)
     by auto
 qed
 
+
 lemma zainupcs : \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
 proof
   show \<open>\<langle>0, a\<rangle> \<in> {\<langle>0, a\<rangle>}\<close>
     by auto
 next
+  (* {\<langle>0, a\<rangle>} is a 0-step computation *)
   show \<open>{\<langle>0, a\<rangle>} \<in> pcs(A, a, g)\<close>
   proof(unfold pcs_def)
     show \<open>{\<langle>0, a\<rangle>} \<in> {t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)}\<close>
@@ -985,6 +1007,26 @@ lemma hhc :
 proof
   from 1 and 2 show \<open>a \<in> C \<and> A \<subseteq> C\<close> by auto
 qed
+
+
+(* push_back a pair to the partial computation t *)
+(* sublocale pbpc =
+  fixes t m
+  assumes H1:\<open>partcomp(A,t,m,a,g)\<close>
+begin
+
+end*)
+
+lemma shortlem :
+  assumes H1:\<open>partcomp(A,t,m,a,g)\<close>
+  shows \<open>partcomp(A,t,m,a,g)\<close>
+proof 
+  oops
+
+lemma shortlem  :
+  assumes H:\<open>t \<in> pcs(A, a, g)\<close>
+  shows \<open>t \<in> pcs(A, a, g)\<close>
+  oops
 
 lemma l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
 proof
@@ -1073,7 +1115,7 @@ proof
                       show \<open>t \<in> succ(m) \<rightarrow> A\<close>
                         sorry
                       show \<open>succ(m) \<notin> succ(m)\<close>
-                        sorry
+                        by (rule  upair.mem_not_refl)
                       show \<open>g ` \<langle>t ` m, m\<rangle> \<in> A\<close>
                         sorry
                     qed
@@ -1112,8 +1154,6 @@ proof
   qed
 qed
 
-lemma l3:\<open>function(\<Union>pcs(A, a, g))\<close>
-  sorry
 
 lemma l4 : \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A\<close>
 proof(unfold Pi_def)
