@@ -502,6 +502,17 @@ proof(unfold function_def)
   qed
 qed
 
+theorem compatsetunionfun : 
+  fixes S
+  assumes H0:\<open>compatset(S)\<close>
+  assumes W:\<open>f\<in>S\<close>
+  assumes Q:\<open>f:A\<rightarrow>B\<close>
+  assumes T:\<open>a\<in>A\<close>
+shows \<open>(\<Union>S)`a = f ` a\<close>
+proof
+(*todo!*)
+  oops
+
 (* Natural numbers are linearly ordered by \<in> *)
 
 
@@ -542,7 +553,7 @@ lemma partcompE [elim] :
 
 (* F *)
 definition pcs :: \<open>[i,i,i]\<Rightarrow>i\<close>
-  where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
+  where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m\<in>nat. partcomp(A,t,m,a,g)}\<close>
 
 lemma pcs_uniq : 
   assumes F1:\<open>m1\<in>nat\<close>
@@ -674,12 +685,12 @@ lemma pcs_lem :
 proof (*(rule compatsetI)*)
   fix f1 f2
   assume H1:\<open>f1 \<in> pcs(A, a, g)\<close>
-  then have H1':\<open>f1 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
+  then have H1':\<open>f1 \<in> {t\<in>Pow(nat*A). \<exists>m\<in>nat. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
   hence H1'A:\<open>f1 \<in> Pow(nat*A)\<close> by auto
   hence H1'A:\<open>f1 \<subseteq> (nat*A)\<close> by auto
     (*(t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,succ(m),g)*)
   assume H2:\<open>f2 \<in> pcs(A, a, g)\<close>
-  then have H2':\<open>f2 \<in> {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
+  then have H2':\<open>f2 \<in> {t\<in>Pow(nat*A). \<exists>m\<in>nat. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
   show \<open>compat(f1, f2)\<close>
   proof(rule compatI)
     fix x y1 y2
@@ -689,10 +700,10 @@ proof (*(rule compatsetI)*)
     proof(rule CollectE[OF H1'], rule CollectE[OF H2'])
       assume J0:\<open>f1 \<in> Pow(nat \<times> A)\<close>
       assume J1:\<open>f2 \<in> Pow(nat \<times> A)\<close>
-      assume J2:\<open>\<exists>m. partcomp(A, f1, m, a, g)\<close>
-      assume J3:\<open>\<exists>m. partcomp(A, f2, m, a, g)\<close>
+      assume J2:\<open>\<exists>m\<in>nat. partcomp(A, f1, m, a, g)\<close>
+      assume J3:\<open>\<exists>m\<in>nat. partcomp(A, f2, m, a, g)\<close>
       show \<open>y1 = y2\<close>
-      proof(rule exE[OF J2], rule exE[OF J3])
+      proof(rule bexE[OF J2], rule bexE[OF J3])
         fix m1 m2
         assume K1:\<open>partcomp(A, f1, m1, a, g)\<close>
 (*        hence K1':\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
@@ -866,14 +877,14 @@ lemma l1 : \<open>\<Union>pcs(A, a, g) \<subseteq> nat \<times> A\<close>
 proof
   fix x
   assume H:\<open>x \<in> \<Union>pcs(A, a, g)\<close>
-  hence  H:\<open>x \<in> \<Union>{t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
+  hence  H:\<open>x \<in> \<Union>{t\<in>Pow(nat*A). \<exists>m\<in>nat. partcomp(A,t,m,a,g)}\<close>
     by (unfold pcs_def)
   show \<open>x \<in> nat \<times> A\<close>
   proof(rule UnionE[OF H])
     fix B
     assume J1:\<open>x\<in>B\<close>
     assume J2:\<open>B \<in> {t \<in> Pow(nat \<times> A) .
-            \<exists>m. partcomp(A, t, m, a, g)}\<close>
+            \<exists>m\<in>nat. partcomp(A, t, m, a, g)}\<close>
     hence J2:\<open>B \<in> Pow(nat \<times> A)\<close> by auto
     hence J2:\<open>B \<subseteq> nat \<times> A\<close> by auto
     from J1 and J2 show \<open>x \<in> nat \<times> A\<close>
@@ -930,30 +941,8 @@ proof(unfold satpc_def)
     by auto
 qed
 
-
-lemma zainupcs : \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
-proof
-  show \<open>\<langle>0, a\<rangle> \<in> {\<langle>0, a\<rangle>}\<close>
-    by auto
-next
-  (* {\<langle>0, a\<rangle>} is a 0-step computation *)
-  show \<open>{\<langle>0, a\<rangle>} \<in> pcs(A, a, g)\<close>
-  proof(unfold pcs_def)
-    show \<open>{\<langle>0, a\<rangle>} \<in> {t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)}\<close>
-    proof
-      show \<open>{\<langle>0, a\<rangle>} \<in> Pow(nat \<times> A)\<close>
-      proof(rule PowI, rule equalities.singleton_subsetI)
-        show \<open>\<langle>0, a\<rangle> \<in> nat \<times> A\<close>
-        proof
-          show \<open>0 \<in> nat\<close> by auto
-        next
-          show \<open>a \<in> A\<close> by (rule H1)
-        qed
-      qed
-    next
-      show \<open>\<exists>m. partcomp(A, {\<langle>0, a\<rangle>}, m, a, g)\<close>
-      proof
-        show \<open>partcomp(A, {\<langle>0, a\<rangle>}, 0, a, g)\<close>
+lemma zerostep :
+  shows \<open>partcomp(A, {\<langle>0, a\<rangle>}, 0, a, g)\<close>
         proof(unfold partcomp_def)
           show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A \<and> {\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
           proof
@@ -1000,6 +989,33 @@ next
             qed
           qed
         qed
+
+lemma zainupcs : \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
+proof
+  show \<open>\<langle>0, a\<rangle> \<in> {\<langle>0, a\<rangle>}\<close>
+    by auto
+next
+  (* {\<langle>0, a\<rangle>} is a 0-step computation *)
+  show \<open>{\<langle>0, a\<rangle>} \<in> pcs(A, a, g)\<close>
+  proof(unfold pcs_def)
+    show \<open>{\<langle>0, a\<rangle>} \<in> {t \<in> Pow(nat \<times> A) . \<exists>m\<in>nat. partcomp(A, t, m, a, g)}\<close>
+    proof
+      show \<open>{\<langle>0, a\<rangle>} \<in> Pow(nat \<times> A)\<close>
+      proof(rule PowI, rule equalities.singleton_subsetI)
+        show \<open>\<langle>0, a\<rangle> \<in> nat \<times> A\<close>
+        proof
+          show \<open>0 \<in> nat\<close> by auto
+        next
+          show \<open>a \<in> A\<close> by (rule H1)
+        qed
+      qed
+    next
+      show \<open>\<exists>m\<in>nat. partcomp(A, {\<langle>0, a\<rangle>}, m, a, g)\<close>
+      proof
+        show \<open>partcomp(A, {\<langle>0, a\<rangle>}, 0, a, g)\<close>
+          by (rule zerostep)
+      next
+        show \<open>0 \<in> nat\<close> by auto
       qed
     qed
   qed
@@ -1202,15 +1218,16 @@ proof
         fix t
         assume E1:\<open>\<langle>x, y\<rangle> \<in> t\<close>
         assume E2:\<open>t \<in> pcs(A, a, g)\<close>
-        hence E2:\<open>t\<in>{t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close> 
+        hence E2:\<open>t\<in>{t\<in>Pow(nat*A). \<exists>m \<in> nat. partcomp(A,t,m,a,g)}\<close> 
           by(unfold pcs_def)
         have E21:\<open>t\<in>Pow(nat*A)\<close>
           by(rule CollectD1[OF E2])
-        have E22m:\<open>\<exists>m. partcomp(A,t,m,a,g)\<close>
+        have E22m:\<open>\<exists>m\<in>nat. partcomp(A,t,m,a,g)\<close>
           by(rule CollectD2[OF E2])
         show \<open>succ(x)\<in>domain(\<Union>pcs(A, a, g))\<close>
-        proof(rule exE[OF E22m])
+        proof(rule bexE[OF E22m])
           fix m
+          assume mnat:\<open>m\<in>nat\<close>
           assume E22P:\<open>partcomp(A,t,m,a,g)\<close>
           hence E22:\<open>((t:succ(m)\<rightarrow>A) \<and> (t`0=a)) \<and> satpc(t,m,g)\<close> 
             by(unfold partcomp_def, auto)
@@ -1256,11 +1273,14 @@ proof
                   qed
                 qed
               next 
-                show \<open>\<exists>m. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
-(*xinsm:\<open>x \<in> succ(m)\<close>*)
+                show \<open>\<exists>m \<in> nat. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
+(*xinsm:\<open>x \<in> succ(m)\<close>
+      next
+        show \<open>0 \<in> nat\<close> by auto
+*)
                 proof(rule succE[OF xinsm])
                   assume xeqm:\<open>x=m\<close>
-                  show \<open>\<exists>m. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
+                  show \<open>\<exists>m \<in> nat. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
                   proof
                     show \<open>partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(x), a, g)\<close>
                     proof(rule shortlem[OF Q1])
@@ -1270,15 +1290,15 @@ proof
                           by (rule E22P)
                       qed
                     qed
+                  next
+                    from Q1 show \<open>succ(x) \<in> nat\<close> by auto
                   qed
 (*          assume E22:\<open>partcomp(A,t,m,a,g)\<close> *)
                 next
                   assume xinm:\<open>x\<in>m\<close>
-                  have mnat:\<open>m\<in>nat\<close>
-                    sorry
                   have lmm:\<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) = t\<close>
                     by (rule addmiddle[OF mnat E22P xinm])
-                  show \<open>\<exists>m. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
+                  show \<open>\<exists>m\<in>nat. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
                     by(rule subst[of t], rule sym, rule lmm, rule E22m)
                 qed
               qed
@@ -1344,6 +1364,36 @@ proof
 qed
 
 
+lemma useful : \<open>\<forall>m\<in>nat. \<exists>t. partcomp(A,t,m,a,g)\<close>
+proof(rule nat_induct_bound)
+  show \<open>\<exists>t. partcomp(A, t, 0, a, g)\<close>
+  proof
+    show \<open>partcomp(A, {\<langle>0, a\<rangle>}, 0, a, g)\<close>
+      by (rule zerostep)
+  qed
+next
+  fix m
+  assume mnat:\<open>m\<in>nat\<close>
+  assume G:\<open>\<exists>t. partcomp(A,t,m,a,g)\<close>
+  show \<open>\<exists>t. partcomp(A,t,succ(m),a,g)\<close>
+  proof(rule exE[OF G])
+    fix t
+    assume G:\<open>partcomp(A,t,m,a,g)\<close>
+    show \<open>\<exists>t. partcomp(A,t,succ(m),a,g)\<close>
+    proof
+      show \<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close>
+        by(rule shortlem[OF mnat G])
+    qed
+  qed
+qed
+
+(*
+lemma shortlem :
+  assumes mnat:\<open>m\<in>nat\<close>
+  assumes F:\<open>partcomp(A,t,m,a,g)\<close>
+  shows \<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close>
+*)
+
 lemma l4 : \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A\<close>
 proof(unfold Pi_def)
   show \<open> \<Union>pcs(A, a, g) \<in> {f \<in> Pow(nat \<times> A) . nat \<subseteq> domain(f) \<and> function(f)}\<close>
@@ -1373,8 +1423,70 @@ next
   show \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
     by (rule zainupcs)
 qed
-(*sketch - *)
 
+lemma ballE2: 
+(*"[| \<forall>x\<in>A. P(x); x\<in>A ; P(x) ==> Q |] ==> Q"*)
+  assumes \<open>\<forall>x\<in>AA. P(x)\<close>
+  assumes \<open>x\<in>AA\<close>
+  assumes \<open>P(x) ==> Q\<close>
+  shows Q
+  by (rule assms(3), rule bspec, rule assms(1), rule assms(2))
+
+lemma l6new: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
+proof (unfold satpc_def, rule ballI)
+  fix n
+  assume nnat:\<open>n\<in>nat\<close>
+  hence snnat:\<open>succ(n)\<in>nat\<close> by auto
+  (* l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close> *)
+  have \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+  proof(rule ballE2[OF useful snnat], erule exE)
+    fix t
+    assume Y:\<open>partcomp(A, t, succ(n), a, g)\<close>
+    show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+    proof(rule partcompE[OF Y])
+      assume Y1:\<open>t \<in> succ(succ(n)) \<rightarrow> A\<close>
+      assume Y2:\<open>t ` 0 = a\<close>
+      assume Y3:\<open>satpc(t, succ(n), g)\<close>
+      hence Y3:\<open>\<forall>x \<in> succ(n) . t`succ(x) = g ` <t`x, x>\<close>
+        by (unfold satpc_def)
+      hence Y3:\<open>t`succ(n) = g ` <t`n, n>\<close>
+        by (rule bspec, auto)
+      show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+        sorry
+    qed
+  qed
+  have ndom:\<open>n\<in>domain(\<Union>pcs(A, a, g))\<close>
+    by (rule subsetD[OF l2 nnat])
+  have sndom:\<open>succ(n)\<in>domain(\<Union>pcs(A, a, g))\<close>
+    by (rule subsetD[OF l2 snnat])
+  show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+  proof(rule domainE[OF ndom])
+    fix y 
+    assume B:\<open>\<langle>n, y\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
+    show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+    proof(rule UnionE[OF B])
+      fix t
+      assume \<open>\<langle>n, y\<rangle> \<in> t\<close>
+      assume I0:\<open>t \<in> pcs(A, a, g)\<close>
+      hence I1:\<open>t\<in>{t\<in>Pow(nat*A). \<exists>m\<in>nat. partcomp(A,t,m,a,g)}\<close>
+        by (unfold pcs_def)
+      hence I2:\<open>\<exists>m\<in>nat. partcomp(A,t,m,a,g)\<close>
+        by auto
+      show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+      proof(rule bexE[OF I2])
+        fix m
+        assume mnat:\<open>m\<in>nat\<close>
+        assume I4:\<open>partcomp(A, t, m, a, g)\<close>
+(* \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,m,g)\<close> *)
+ (*       hence I5:\<open>\<close>*)
+        show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+          sorry
+      qed
+    qed
+  qed
+qed
+
+(*sketch - *)
 lemma l6: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
 proof (unfold satpc_def)
   show \<open>\<forall>n\<in>nat.
