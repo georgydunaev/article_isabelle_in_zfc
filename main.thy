@@ -1409,6 +1409,20 @@ lemma ballE2:
   where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
 *)
 
+lemma tgb:
+  assumes knat: \<open>k\<in>nat\<close> 
+  assumes D: \<open>t \<in> k \<rightarrow> A\<close>
+  shows  \<open>t \<in> Pow(nat \<times> A)\<close>
+proof -
+  from D
+  have q:\<open>t\<in>{t\<in>Pow(Sigma(k,%_.A)). k\<subseteq>domain(t) & function(t)}\<close>
+    by(unfold Pi_def)
+  have  \<open>t \<in> Pow(k \<times> A)\<close>
+    by (rule CollectD1[OF q])
+  show  \<open>t \<in> Pow(nat \<times> A)\<close>
+    sorry
+qed
+
 lemma l6new: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
 proof (unfold satpc_def, rule ballI)
   fix n
@@ -1429,12 +1443,49 @@ proof (unfold satpc_def, rule ballI)
       hence Y3:\<open>t`succ(n) = g ` <t`n, n>\<close>
         by (rule bspec, auto)
       have e1:\<open>(\<Union>pcs(A, a, g)) ` succ(n) = t ` succ(n)\<close>
-      (*
-proof(rule valofunion, rule pcs_lem, rule H1)
-*)
-        sorry
+      proof(rule valofunion, rule pcs_lem, rule H1)
+        show \<open>t \<in> pcs(A, a, g)\<close>
+        proof(unfold pcs_def, rule CollectI)
+          show \<open>t \<in> Pow(nat \<times> A)\<close>
+            proof(rule tgb)
+            show \<open>t \<in> succ(succ(n)) \<rightarrow> A\<close> by (rule Y1)
+          next
+            from snnat
+            show \<open>succ(succ(n)) \<in> nat\<close> by auto
+          qed
+        next
+          show \<open>\<exists>m\<in>nat. partcomp(A, t, m, a, g)\<close>
+            by(rule bexI, rule Y, rule snnat)
+        qed
+      next
+        show \<open>t \<in> succ(succ(n)) \<rightarrow> A\<close> by (rule Y1)
+      next
+        show \<open>succ(n) \<in> succ(succ(n))\<close> by auto
+      next
+        show \<open>t ` succ(n) = t ` succ(n)\<close> by (rule refl)
+      qed
       have e2:\<open>(\<Union>pcs(A, a, g)) ` n = t ` n\<close>
-        sorry
+      proof(rule valofunion, rule pcs_lem, rule H1)
+        show \<open>t \<in> pcs(A, a, g)\<close>
+        proof(unfold pcs_def, rule CollectI)
+          show \<open>t \<in> Pow(nat \<times> A)\<close>
+          proof(rule tgb)
+            show \<open>t \<in> succ(succ(n)) \<rightarrow> A\<close> by (rule Y1)
+          next
+            from snnat
+            show \<open>succ(succ(n)) \<in> nat\<close> by auto
+          qed
+        next
+          show \<open>\<exists>m\<in>nat. partcomp(A, t, m, a, g)\<close>
+            by(rule bexI, rule Y, rule snnat)
+        qed
+      next
+        show \<open>t \<in> succ(succ(n)) \<rightarrow> A\<close> by (rule Y1)
+      next
+        show \<open>n \<in> succ(succ(n))\<close> by auto
+      next
+        show \<open>t ` n = t ` n\<close> by (rule refl)
+      qed
       have e3:\<open>g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle> = g ` \<langle>t ` n, n\<rangle>\<close>
         by (rule subst[OF e2], rule refl)
       show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
