@@ -1172,9 +1172,6 @@ proof(rule partcompE[OF F])
     by (unfold satpc_def)
   have U:\<open>t ` succ(x) = g ` \<langle>t ` x, x\<rangle>\<close>
     by (rule bspec[OF W xinm])
-  (*have J:\<open>\<And> t A B a b.
-    t \<in> A \<rightarrow> B \<Longrightarrow> t ` a = b \<Longrightarrow> a \<in> A \<Longrightarrow> \<langle>a, b\<rangle> \<in> t\<close>
-  proof(rule apparg)*)
   have E:\<open>\<langle>succ(x), (g ` \<langle>t ` x, x\<rangle>)\<rangle> \<in> t\<close>
   proof(rule apparg[OF F1 U])
     show \<open>succ(x) \<in> succ(m)\<close>
@@ -1209,12 +1206,12 @@ proof
           by(unfold pcs_def)
         have E21:\<open>t\<in>Pow(nat*A)\<close>
           by(rule CollectD1[OF E2])
-        have E22:\<open>\<exists>m. partcomp(A,t,m,a,g)\<close>
+        have E22m:\<open>\<exists>m. partcomp(A,t,m,a,g)\<close>
           by(rule CollectD2[OF E2])
         show \<open>succ(x)\<in>domain(\<Union>pcs(A, a, g))\<close>
-        proof(rule exE[OF E22])
+        proof(rule exE[OF E22m])
           fix m
-          assume E22:\<open>partcomp(A,t,m,a,g)\<close>
+          assume E22P:\<open>partcomp(A,t,m,a,g)\<close>
           hence E22:\<open>((t:succ(m)\<rightarrow>A) \<and> (t`0=a)) \<and> satpc(t,m,g)\<close> 
             by(unfold partcomp_def, auto)
           hence E223:\<open>satpc(t,m,g)\<close> by auto
@@ -1260,7 +1257,35 @@ proof
                 qed
               next 
                 show \<open>\<exists>m. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
-                proof
+(*xinsm:\<open>x \<in> succ(m)\<close>*)
+                proof(rule succE[OF xinsm])
+                  assume xeqm:\<open>x=m\<close>
+                  show \<open>\<exists>m. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
+                  proof
+                    show \<open>partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(x), a, g)\<close>
+                    proof(rule shortlem[OF Q1])
+                      show \<open>partcomp(A, t, x, a, g)\<close>
+                      proof(rule subst[of m x], rule sym, rule xeqm)
+                        show \<open>partcomp(A, t, m, a, g)\<close> 
+                          by (rule E22P)
+                      qed
+                    qed
+                  qed
+(*          assume E22:\<open>partcomp(A,t,m,a,g)\<close> *)
+                next
+                  assume xinm:\<open>x\<in>m\<close>
+                  have mnat:\<open>m\<in>nat\<close>
+                    sorry
+                  have lmm:\<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) = t\<close>
+                    by (rule addmiddle[OF mnat E22P xinm])
+                  show \<open>\<exists>m. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
+                    by(rule subst[of t], rule sym, rule lmm, rule E22m)
+                qed
+              qed
+(*
+            qed
+          qed
+
 (* todo: *)
 \<open>x\<in>m \<Longrightarrow> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) = t\<close>
           \<open>x\<in>succ(m) \<Longrightarrow> if x=m then cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t)\<close>
@@ -1298,7 +1323,7 @@ proof
                     qed
                   qed
                 qed
-              qed
+              qed*)
             next
               show \<open>\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle> \<in> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t)\<close>
                 by auto
