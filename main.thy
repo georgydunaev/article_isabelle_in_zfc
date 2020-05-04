@@ -8,6 +8,17 @@ then prove V=\<Union>(\<alpha>\<in>Ord).V\<alpha>
 trying to rewrite everything without replacement
 *)
 
+lemma apparg:
+  fixes f AA B
+  assumes T0:\<open>f:AA\<rightarrow>B\<close>
+  assumes T1:\<open>f ` a = b\<close>
+  assumes T2:\<open>a \<in> AA\<close>
+  shows \<open>\<langle>a, b\<rangle> \<in> f\<close>
+proof(rule iffD2[OF func.apply_iff], rule T0)
+  show T:\<open>a \<in> AA \<and> f ` a = b\<close>
+    by (rule conjI[OF T2 T1])
+qed
+
 
 theorem nat_induct_bound :
   assumes H0:\<open>P(0)\<close>
@@ -1019,21 +1030,34 @@ end*)
 
 lemma shortlem :
   assumes mnat:\<open>m\<in>nat\<close>
-  assumes H:\<open>partcomp(A,t,m,a,g)\<close>
+  assumes F:\<open>partcomp(A,t,m,a,g)\<close>
   shows \<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close>
-proof(rule partcompE[OF H])
-  assume H1:\<open>t \<in> succ(m) \<rightarrow> A\<close>
-  assume H2:\<open>t ` 0 = a\<close>
-  assume H3:\<open>satpc(t, m, g)\<close>
-  show \<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close>
+proof(rule partcompE[OF F])
+  assume F1:\<open>t \<in> succ(m) \<rightarrow> A\<close>
+  assume F2:\<open>t ` 0 = a\<close>
+  assume F3:\<open>satpc(t, m, g)\<close>
+  show ?thesis (*\<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close> *)
   proof
-    show \<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) \<in> succ(succ(m)) \<rightarrow> A\<close>
-      sorry
+    have ljk:\<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) \<in> (cons(succ(m),succ(m)) \<rightarrow> A)\<close>
+    proof(rule func.fun_extend3[OF F1]) 
+      show \<open>succ(m) \<notin> succ(m)\<close>
+        by (rule  upair.mem_not_refl)
+      have tmA:\<open>t ` m \<in> A\<close>
+        by (rule func.apply_funtype[OF F1], auto)
+      show \<open>g ` \<langle>t ` m, m\<rangle> \<in> A\<close>
+        by(rule func.apply_funtype[OF H2], auto, rule tmA, rule mnat)
+    qed
+    have \<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) \<in> (cons(succ(m),succ(m)) \<rightarrow> A)\<close>
+      by (rule ljk)
+    then have \<open>cons(\<langle>cons(m, m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) \<in> cons(cons(m, m), cons(m, m)) \<rightarrow> A\<close>
+      by (unfold succ_def)
+    then show \<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) \<in> succ(succ(m)) \<rightarrow> A\<close>
+      by (unfold succ_def, assumption)
     show \<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` 0 = a\<close>
-    proof(rule trans, rule func.fun_extend_apply[OF H1])
+    proof(rule trans, rule func.fun_extend_apply[OF F1])
       show \<open>succ(m) \<notin> succ(m)\<close> by (rule  upair.mem_not_refl)
       show \<open>(if 0 = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` 0) = a\<close>
-        by(rule trans, rule upair.if_not_P, auto, rule H2)
+        by(rule trans, rule upair.if_not_P, auto, rule F2)
     qed
     show \<open>satpc(cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t), succ(m), g)\<close>
     proof(unfold satpc_def, rule ballI)
@@ -1041,7 +1065,7 @@ proof(rule partcompE[OF H])
       assume Q:\<open>n \<in> succ(m)\<close>
       show \<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` succ(n) 
 = g ` \<langle>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n, n\<rangle>\<close>
-      proof(rule trans, rule func.fun_extend_apply[OF H1], rule upair.mem_not_refl)
+      proof(rule trans, rule func.fun_extend_apply[OF F1], rule upair.mem_not_refl)
         show \<open>(if succ(n) = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` succ(n)) =
     g ` \<langle>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n, n\<rangle>\<close>
         proof(rule upair.succE[OF Q])
@@ -1052,7 +1076,7 @@ proof(rule partcompE[OF H])
             from Y show \<open>succ(n) = succ(m)\<close> by auto
           next
             have L1:\<open>t ` m = cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n\<close>
-            proof(rule sym, rule trans, rule func.fun_extend_apply[OF H1], rule upair.mem_not_refl) 
+            proof(rule sym, rule trans, rule func.fun_extend_apply[OF F1], rule upair.mem_not_refl) 
               show \<open> (if n = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` n) = t ` m\<close>
               proof(rule trans, rule upair.if_not_P)
                 from Y show \<open>t ` n = t ` m\<close> by auto
@@ -1081,7 +1105,7 @@ proof(rule partcompE[OF H])
           next
 (* upair.succ_inject: succ(?m) = succ(?n) \<Longrightarrow> ?m = ? *)
             have X:\<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n = t ` n\<close>
-            proof(rule trans, rule func.fun_extend_apply[OF H1], rule upair.mem_not_refl)
+            proof(rule trans, rule func.fun_extend_apply[OF F1], rule upair.mem_not_refl)
               show \<open>(if n = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` n) = t ` n\<close>
               proof(rule upair.if_not_P)
                 show \<open>n \<noteq> succ(m)\<close>
@@ -1097,7 +1121,7 @@ proof(rule partcompE[OF H])
                 qed
               qed
             qed
-            from H3
+            from F3
             have W:\<open>\<forall>n\<in>m. t ` succ(n) = g ` \<langle>t ` n, n\<rangle>\<close>
               by (unfold satpc_def)
             have U:\<open>t ` succ(n) = g ` \<langle>t ` n, n\<rangle>\<close>
@@ -1111,11 +1135,55 @@ proof(rule partcompE[OF H])
   qed
 qed
 
-
-lemma shortlem  :
+(*\<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close>*)
+lemma shortlem2  :
   assumes H:\<open>t \<in> pcs(A, a, g)\<close>
   shows \<open>t \<in> pcs(A, a, g)\<close>
   oops
+
+(*
+lemma l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
+proof
+  fix x
+  assume G:\<open>x\<in>nat\<close>
+  show \<open>x \<in> domain(\<Union>pcs(A, a, g))\<close>
+  proof(rule complete_induct[of x])
+    fix x
+    assume \<open>x \<in> nat\<close>
+    assume \<open>(\<And>y. y \<in> x \<Longrightarrow> y \<in> domain(\<Union>pcs(A, a, g)))\<close>
+    show \<open>x \<in> domain(\<Union>pcs(A, a, g))\<close>
+    proof
+*)
+
+(* if we add ordered pair in the middle of partial computation then
+it will not change *)
+lemma addmiddle:
+(*  fixes  t m a g*)
+  assumes mnat:\<open>m\<in>nat\<close>
+  assumes F:\<open>partcomp(A,t,m,a,g)\<close>
+  assumes xinm:\<open>x\<in>m\<close>
+  shows \<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) = t\<close>
+proof(rule partcompE[OF F])
+  assume F1:\<open>t \<in> succ(m) \<rightarrow> A\<close>
+  assume F2:\<open>t ` 0 = a\<close>
+  assume F3:\<open>satpc(t, m, g)\<close>
+  from F3
+  have W:\<open>\<forall>n\<in>m. t ` succ(n) = g ` \<langle>t ` n, n\<rangle>\<close>
+    by (unfold satpc_def)
+  have U:\<open>t ` succ(x) = g ` \<langle>t ` x, x\<rangle>\<close>
+    by (rule bspec[OF W xinm])
+  (*have J:\<open>\<And> t A B a b.
+    t \<in> A \<rightarrow> B \<Longrightarrow> t ` a = b \<Longrightarrow> a \<in> A \<Longrightarrow> \<langle>a, b\<rangle> \<in> t\<close>
+  proof(rule apparg)*)
+  have E:\<open>\<langle>succ(x), (g ` \<langle>t ` x, x\<rangle>)\<rangle> \<in> t\<close>
+  proof(rule apparg[OF F1 U])
+    show \<open>succ(x) \<in> succ(m)\<close>
+      by(rule mp[OF bspec[OF le_succ mnat] xinm])
+  qed
+  show ?thesis
+    by (rule equalities.cons_absorb[OF E])
+qed
+
 
 lemma l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
 proof
@@ -1193,6 +1261,13 @@ proof
               next 
                 show \<open>\<exists>m. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
                 proof
+(* todo: *)
+\<open>x\<in>m \<Longrightarrow> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) = t\<close>
+          \<open>x\<in>succ(m) \<Longrightarrow> if x=m then cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t)\<close>
+(* \<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close> *)
+                  show \<open>partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(x), a, g)\<close>
+                  proof(rule shortlem)
+(*here!*)
                   show \<open>partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(m), a, g)\<close>
                   proof(unfold partcomp_def, 
                       rule conjI)
