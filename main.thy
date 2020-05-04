@@ -502,16 +502,41 @@ proof(unfold function_def)
   qed
 qed
 
-theorem compatsetunionfun : 
+theorem domuncomp: 
+  assumes H0:\<open>compatset(S)\<close>
+  assumes W:\<open>f\<in>S\<close>
+  shows \<open>domain(f)\<subseteq>domain(\<Union>S)\<close>
+  sorry
+
+theorem mkel :
+  assumes 1:\<open>A\<close>
+  assumes 2:\<open>A\<Longrightarrow>B\<close>
+  shows \<open>B\<close>
+  by (rule 2, rule 1)
+
+theorem valofunion : 
   fixes S
   assumes H0:\<open>compatset(S)\<close>
   assumes W:\<open>f\<in>S\<close>
   assumes Q:\<open>f:A\<rightarrow>B\<close>
   assumes T:\<open>a\<in>A\<close>
-shows \<open>(\<Union>S)`a = f ` a\<close>
-proof
-(*todo!*)
-  oops
+  assumes \<open>f ` a = v\<close>
+  shows N:\<open>(\<Union>S)`a = v\<close>
+proof -
+  have \<open>f ` a = v\<close>
+    sorry
+(*
+  proof(rule mkel, rule apparg)
+    show \<open>(\<Union>S)`a = v\<close> by (rule N)
+    show \<open>a\<in>A\<close> by (rule T)
+    oops
+*)
+ (*todo!*)
+(*  show \<open>f ` a = v\<close> *)
+  show N:\<open>(\<Union>S)`a = v\<close>
+    sorry
+qed
+
 
 (* Natural numbers are linearly ordered by \<in> *)
 
@@ -1302,57 +1327,10 @@ proof
                     by(rule subst[of t], rule sym, rule lmm, rule E22m)
                 qed
               qed
-(*
-            qed
-          qed
-
-(* todo: *)
-\<open>x\<in>m \<Longrightarrow> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) = t\<close>
-          \<open>x\<in>succ(m) \<Longrightarrow> if x=m then cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t)\<close>
-(* \<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close> *)
-                  show \<open>partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(x), a, g)\<close>
-                  proof(rule shortlem)
-(*here!*)
-                  show \<open>partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(m), a, g)\<close>
-                  proof(unfold partcomp_def, 
-                      rule conjI)
-(*func.fun_extend3:
-    ?f \<in> ?A \<rightarrow> ?B \<Longrightarrow>
-    ?c \<notin> ?A \<Longrightarrow> ?b \<in> ?B \<Longrightarrow> cons(\<langle>?c, ?b\<rangle>, ?f) \<in> cons(?c, ?A) \<rightarrow> ?B
-*)                  have ljk:\<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) \<in> (cons(succ(m),succ(m)) \<rightarrow> A)\<close>
-                    proof(rule func.fun_extend3) 
-                      show \<open>t \<in> succ(m) \<rightarrow> A\<close>
-                        sorry
-                      show \<open>succ(m) \<notin> succ(m)\<close>
-                        by (rule  upair.mem_not_refl)
-                      show \<open>g ` \<langle>t ` m, m\<rangle> \<in> A\<close>
-                        sorry
-                    qed
-                    have \<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) \<in> (cons(succ(m),succ(m)) \<rightarrow> A)\<close>
-                      sorry
-                    show \<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) \<in> (succ(succ(m)) \<rightarrow> A)\<close>
-                      sorry
-                  next
-                    show \<open> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) ` 0 = a \<and> satpc(cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(m), g)\<close>
-                    proof
-                      show \<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) ` 0 = a\<close>
-                        sorry
-                    next
-                      show \<open> satpc(cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), succ(m), g)\<close>
-                        sorry
-                    qed
-                  qed
-                qed
-              qed*)
             next
               show \<open>\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle> \<in> cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t)\<close>
                 by auto
             qed
-(*
-  where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
-  where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,m,g)\<close>
-  where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
-*)
           qed
         qed
       qed
@@ -1386,13 +1364,6 @@ next
     qed
   qed
 qed
-
-(*
-lemma shortlem :
-  assumes mnat:\<open>m\<in>nat\<close>
-  assumes F:\<open>partcomp(A,t,m,a,g)\<close>
-  shows \<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close>
-*)
 
 lemma l4 : \<open>(\<Union>pcs(A,a,g)) \<in> nat -> A\<close>
 proof(unfold Pi_def)
@@ -1432,13 +1403,19 @@ lemma ballE2:
   shows Q
   by (rule assms(3), rule bspec, rule assms(1), rule assms(2))
 
+(*
+  where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
+  where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,m,g)\<close>
+  where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
+*)
+
 lemma l6new: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
 proof (unfold satpc_def, rule ballI)
   fix n
   assume nnat:\<open>n\<in>nat\<close>
   hence snnat:\<open>succ(n)\<in>nat\<close> by auto
   (* l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close> *)
-  have \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+  show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
   proof(rule ballE2[OF useful snnat], erule exE)
     fix t
     assume Y:\<open>partcomp(A, t, succ(n), a, g)\<close>
@@ -1451,10 +1428,21 @@ proof (unfold satpc_def, rule ballI)
         by (unfold satpc_def)
       hence Y3:\<open>t`succ(n) = g ` <t`n, n>\<close>
         by (rule bspec, auto)
-      show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+      have e1:\<open>(\<Union>pcs(A, a, g)) ` succ(n) = t ` succ(n)\<close>
+      (*
+proof(rule valofunion, rule pcs_lem, rule H1)
+*)
         sorry
+      have e2:\<open>(\<Union>pcs(A, a, g)) ` n = t ` n\<close>
+        sorry
+      have e3:\<open>g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle> = g ` \<langle>t ` n, n\<rangle>\<close>
+        by (rule subst[OF e2], rule refl)
+      show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
+        by (rule trans, rule e1,rule trans, rule Y3, rule sym, rule e3)
     qed
   qed
+qed
+(*
   have ndom:\<open>n\<in>domain(\<Union>pcs(A, a, g))\<close>
     by (rule subsetD[OF l2 nnat])
   have sndom:\<open>succ(n)\<in>domain(\<Union>pcs(A, a, g))\<close>
@@ -1485,8 +1473,9 @@ proof (unfold satpc_def, rule ballI)
     qed
   qed
 qed
-
+*)
 (*sketch - *)
+(*
 lemma l6: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
 proof (unfold satpc_def)
   show \<open>\<forall>n\<in>nat.
@@ -1504,7 +1493,7 @@ proof (unfold satpc_def)
       sorry
   qed
 qed
-
+*)
 (*
         have A1:\<open>\<Union>pcs(A,a,g)\<in>{f\<in>Pow(nat*A). nat\<subseteq>domain(f) & function(f)}\<close>
       proof 
@@ -1581,7 +1570,7 @@ proof
           by (rule l5)
       next
         show \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
-          by (rule l6)
+          by (rule l6new)
       qed
     qed
   qed
