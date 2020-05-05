@@ -1670,11 +1670,35 @@ end
 *)
 
 definition add_g :: \<open>i\<close>
-  where add_g_def : \<open>add_g == {\<langle>x,x\<rangle>. x\<in>nat}\<close>
-(* {z \<in> nat*nat . \<langle>x,x\<rangle> } *)
+  where add_g_def : \<open>add_g == {succ(fst(p)). p \<in> nat \<times> nat}\<close>
+(*
+fixed a
+t = (a+_)
+
+g`\<langle>t`n, n\<rangle> = t`succ(n) = a+(n+1) = (a+n)+1 = t`n +1
+g`\<langle>a, b\<rangle> = a + 1
+g:nat \<times> nat \<rightarrow> nat
+g(p) = succ(pr1(p))
+g = {succ(pr1(p)). p \<in> nat \<times> nat} 
+t`succ(n)
+add_g == {\<langle>\<langle>a,b\<rangle>,a\<rangle>. a\<in>nat\<and> b\<in>nat} {z \<in> nat*nat . \<langle>x,x\<rangle> }
+definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
+  where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
+*)
+
 theorem addition:
- \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,add_g))\<close>
-  oops
+  assumes \<open>a\<in>nat\<close>
+  shows
+ \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>nat)) \<and> ((f`0) = a) \<and> satpc(f,nat,add_g))\<close>
+proof(rule rec_thm.recursion, unfold rec_thm_def)
+  show \<open>a \<in> nat \<and> add_g \<in> nat \<times> nat \<rightarrow> nat\<close>
+  proof
+    show \<open>a\<in>nat\<close> by (rule assms(1))
+  next
+    show \<open>add_g \<in> nat \<times> nat \<rightarrow> nat\<close>
+      sorry
+  qed
+qed
 
 definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ else _\<close>)
   where "fite(A, \<phi>, a, b) == \<Union>{x\<in>A.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
