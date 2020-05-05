@@ -506,7 +506,7 @@ theorem domuncomp:
   assumes H0:\<open>compatset(S)\<close>
   assumes W:\<open>f\<in>S\<close>
   shows \<open>domain(f)\<subseteq>domain(\<Union>S)\<close>
-  sorry
+  oops
 
 theorem mkel :
   assumes 1:\<open>A\<close>
@@ -520,12 +520,25 @@ theorem valofunion :
   assumes W:\<open>f\<in>S\<close>
   assumes Q:\<open>f:A\<rightarrow>B\<close>
   assumes T:\<open>a\<in>A\<close>
-  assumes \<open>f ` a = v\<close>
+  assumes P:\<open>f ` a = v\<close>
   shows N:\<open>(\<Union>S)`a = v\<close>
 proof -
+  have K:\<open>\<langle>a, v\<rangle> \<in> f\<close>
+    by (rule apparg[OF Q P T])
+  show N:\<open>(\<Union>S)`a = v\<close>
+  proof(rule function_apply_equality)
+    show \<open>function(\<Union>S)\<close>
+      by(rule compatsetunionfun[OF H0])
+  next
+    show \<open>\<langle>a, v\<rangle> \<in> \<Union>S\<close>
+      by(rule UnionI[OF W K ])
+  qed
+qed
+
+
+(*
   have \<open>f ` a = v\<close>
     sorry
-(*
   proof(rule mkel, rule apparg)
     show \<open>(\<Union>S)`a = v\<close> by (rule N)
     show \<open>a\<in>A\<close> by (rule T)
@@ -533,9 +546,6 @@ proof -
 *)
  (*todo!*)
 (*  show \<open>f ` a = v\<close> *)
-  show N:\<open>(\<Union>S)`a = v\<close>
-    sorry
-qed
 
 
 (* Natural numbers are linearly ordered by \<in> *)
@@ -1417,10 +1427,19 @@ proof -
   from D
   have q:\<open>t\<in>{t\<in>Pow(Sigma(k,%_.A)). k\<subseteq>domain(t) & function(t)}\<close>
     by(unfold Pi_def)
-  have  \<open>t \<in> Pow(k \<times> A)\<close>
+  have J:\<open>t \<in> Pow(k \<times> A)\<close>
     by (rule CollectD1[OF q])
-  show  \<open>t \<in> Pow(nat \<times> A)\<close>
-    sorry
+  have G:\<open>k \<times> A \<subseteq> nat \<times> A\<close>
+  proof(rule func.Sigma_mono)
+    from knat
+    show \<open>k\<subseteq>nat\<close>
+      by (rule QUniv.naturals_subset_nat)
+  next
+    show \<open>\<And>x. x \<in> k \<Longrightarrow> A \<subseteq> A\<close>
+      by auto
+  qed
+  show \<open>t \<in> Pow(nat \<times> A)\<close>
+    by (rule subsetD, rule func.Pow_mono[OF G], rule J)
 qed
 
 lemma l6new: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
