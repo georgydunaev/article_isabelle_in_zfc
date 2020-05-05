@@ -8,6 +8,16 @@ then prove V=\<Union>(\<alpha>\<in>Ord).V\<alpha>
 trying to rewrite everything without replacement
 *)
 
+lemma pisubsig : \<open>Pi(A,P)\<subseteq>Pow(Sigma(A,P))\<close>
+proof
+  fix x
+  assume \<open>x \<in> Pi(A,P)\<close>
+  hence \<open>x \<in> {f\<in>Pow(Sigma(A,P)). A\<subseteq>domain(f) & function(f)}\<close>
+    by (unfold Pi_def)
+  thus \<open>x \<in> Pow(Sigma(A, P))\<close> 
+    by (rule CollectD1)
+qed
+
 lemma apparg:
   fixes f AA B
   assumes T0:\<open>f:AA\<rightarrow>B\<close>
@@ -978,52 +988,52 @@ qed
 
 lemma zerostep :
   shows \<open>partcomp(A, {\<langle>0, a\<rangle>}, 0, a, g)\<close>
-        proof(unfold partcomp_def)
-          show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A \<and> {\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
+proof(unfold partcomp_def)
+  show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A \<and> {\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
+  proof
+    show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A\<close>
+    proof (unfold Pi_def)
+      show \<open>{\<langle>0, a\<rangle>} \<in> {f \<in> Pow(1 \<times> A) . 1 \<subseteq> domain(f) \<and> function(f)}\<close>
+      proof
+        show \<open>{\<langle>0, a\<rangle>} \<in> Pow(1 \<times> A)\<close>
+        proof(rule PowI, rule equalities.singleton_subsetI)
+          show \<open>\<langle>0, a\<rangle> \<in> 1 \<times> A\<close>
           proof
-            show \<open>{\<langle>0, a\<rangle>} \<in> 1 -> A\<close>
-            proof (unfold Pi_def)
-              show \<open>{\<langle>0, a\<rangle>} \<in> {f \<in> Pow(1 \<times> A) . 1 \<subseteq> domain(f) \<and> function(f)}\<close>
-              proof
-                show \<open>{\<langle>0, a\<rangle>} \<in> Pow(1 \<times> A)\<close>
-                proof(rule PowI, rule equalities.singleton_subsetI)
-                  show \<open>\<langle>0, a\<rangle> \<in> 1 \<times> A\<close>
-                  proof
-                    show \<open>0 \<in> 1\<close> by auto
-                  next
-                    show \<open>a \<in> A\<close> by (rule H1)
-                  qed
-                qed
-              next
-                show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>}) \<and> function({\<langle>0, a\<rangle>})\<close>
-                proof
-                  show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>})\<close>
-                  proof
-                    fix x
-                    assume W:\<open>x\<in>1\<close>
-                    from W have W:\<open>x=0\<close> by (rule le1)
-                    have Y:\<open>0\<in>domain({\<langle>0, a\<rangle>})\<close>
-                      by auto
-                    from W and Y 
-                    show \<open>x\<in>domain({\<langle>0, a\<rangle>})\<close>
-                      by auto
-                  qed
-                next
-                  show \<open>function({\<langle>0, a\<rangle>})\<close>
-                    by (rule lsinglfun)
-                qed
-              qed
-            qed
-            show \<open>{\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
-            proof
-              show \<open>{\<langle>0, a\<rangle>} ` 0 = a\<close>
-                by (rule func.singleton_apply)
-            next
-              show \<open>satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
-                by (rule singlsatpc)
-            qed
+            show \<open>0 \<in> 1\<close> by auto
+          next
+            show \<open>a \<in> A\<close> by (rule H1)
           qed
         qed
+      next
+        show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>}) \<and> function({\<langle>0, a\<rangle>})\<close>
+        proof
+          show \<open>1 \<subseteq> domain({\<langle>0, a\<rangle>})\<close>
+          proof
+            fix x
+            assume W:\<open>x\<in>1\<close>
+            from W have W:\<open>x=0\<close> by (rule le1)
+            have Y:\<open>0\<in>domain({\<langle>0, a\<rangle>})\<close>
+              by auto
+            from W and Y 
+            show \<open>x\<in>domain({\<langle>0, a\<rangle>})\<close>
+              by auto
+          qed
+        next
+          show \<open>function({\<langle>0, a\<rangle>})\<close>
+            by (rule lsinglfun)
+        qed
+      qed
+    qed
+    show \<open>{\<langle>0, a\<rangle>} ` 0 = a \<and> satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
+    proof
+      show \<open>{\<langle>0, a\<rangle>} ` 0 = a\<close>
+        by (rule func.singleton_apply)
+    next
+      show \<open>satpc({\<langle>0, a\<rangle>}, 0, g)\<close>
+        by (rule singlsatpc)
+    qed
+  qed
+qed
 
 lemma zainupcs : \<open>\<langle>0, a\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
 proof
@@ -1670,8 +1680,20 @@ end
 *)
 
 definition add_g :: \<open>i\<close>
-  where add_g_def : \<open>add_g == {succ(fst(p)). p \<in> nat \<times> nat}\<close>
+  where add_g_def : \<open>add_g == {p \<in> (nat \<times> nat) \<times> nat . 
+snd(p) = succ(fst(fst(p)))}\<close>
+
+definition add_g2 :: \<open>i\<close>
+  where add_g2_def : \<open>add_g2 == \<lambda>x\<in>(nat*nat). succ(fst(x))\<close>
+
+lemma addg2fun: \<open>function(add_g2)\<close>
+  by (unfold add_g2_def, rule func.function_lam)
+
+
+(*func.function_lam: function(\<lambda>x\<in>?A. ?b(x))*)
 (*
+definition add_g :: \<open>i\<close>
+  where add_g_def : \<open>add_g == {succ(fst(p)). p \<in> nat \<times> nat}\<close>
 fixed a
 t = (a+_)
 
@@ -1686,17 +1708,121 @@ definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
   where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
 *)
 
+theorem addgsubpow : \<open>add_g \<in> Pow((nat \<times> nat) \<times> nat)\<close>
+proof
+  show \<open>add_g \<subseteq> (nat \<times> nat) \<times> nat\<close>
+  proof
+    fix x
+    assume \<open>x \<in> add_g\<close>
+    hence G:\<open>x \<in> {p \<in> (nat \<times> nat) \<times> nat . snd(p) = succ(fst(fst(p)))}\<close>
+      by (unfold add_g_def)
+    show \<open>x \<in> (nat \<times> nat) \<times> nat\<close>
+      by(rule CollectD1[OF G])
+  qed
+qed
+
+(*
+func.lam_type:
+    (\<And>x. x \<in> ?A \<Longrightarrow> ?b(x) \<in> ?B(x)) \<Longrightarrow> (\<lambda>x\<in>?A. ?b(x)) \<in> Pi(?A, ?B)
+*)
+
+
+lemma addg2subpow : \<open>add_g2 \<in> Pow((nat \<times> nat) \<times> nat)\<close>
+proof (unfold add_g2_def, rule subsetD)
+  show \<open>(\<lambda>x\<in>nat \<times> nat. succ(fst(x))) \<in> nat \<times> nat \<rightarrow> nat\<close>
+  proof(rule func.lam_type)
+    fix x
+    assume \<open>x\<in>nat \<times> nat\<close>
+    hence \<open>fst(x)\<in>nat\<close> by auto
+    thus \<open>succ(fst(x)) \<in> nat\<close> by auto
+  qed
+next
+  show \<open>nat \<times> nat \<rightarrow> nat \<subseteq> Pow((nat \<times> nat) \<times> nat)\<close>
+    by (rule pisubsig)
+qed
+
+(*
+    hence G:\<open>x \<in> {succ(fst(p)). p \<in> nat \<times> nat}\<close>
+      by (unfold add_g_def)
+    show \<open>x \<in> (nat \<times> nat) \<times> nat\<close>
+    proof (rule RepFunE[OF G])
+      fix y
+      assume \<open>y \<in> (nat \<times> nat)\<close>
+      assume D:\<open>x = succ(fst(y))\<close>
+      show \<open>x \<in> (nat \<times> nat) \<times> nat\<close>
+*)
+lemma addg2dom : \<open>nat \<times> nat \<subseteq> domain(add_g2)\<close>
+proof(unfold add_g2_def)
+  have e:\<open>domain(\<lambda>x\<in>nat \<times> nat. succ(fst(x))) = nat \<times> nat\<close>
+    by (rule domain_lam)  (*"domain(Lambda(A,b)) = A"*)
+  show \<open>nat \<times> nat \<subseteq>
+    domain(\<lambda>x\<in>nat \<times> nat. succ(fst(x)))\<close>
+    by (rule subst, rule sym, rule e, auto)
+qed
+
+
+
+lemma addgdom : \<open>nat \<times> nat \<subseteq> domain(add_g)\<close>
+proof
+  fix x
+  assume xnn:\<open>x\<in>nat \<times> nat\<close>
+  hence fxn:\<open>fst(x)\<in>nat\<close> by auto
+  show \<open>x\<in>domain(add_g)\<close>
+  proof
+(*snd(p) = succ(fst(fst(p)))*)
+    show \<open>\<langle>x, succ(fst(x))\<rangle> \<in> add_g\<close>
+    proof(unfold add_g_def, rule CollectI)
+      show \<open>\<langle>x, succ(fst(x))\<rangle> \<in> (nat \<times> nat) \<times> nat\<close>
+      proof
+        show \<open>x\<in>nat \<times> nat\<close> by (rule xnn)
+      next
+        from fxn
+        show \<open>succ(fst(x)) \<in> nat\<close> by auto
+      qed
+    next
+      show \<open>snd(\<langle>x, succ(fst(x))\<rangle>) =
+    succ(fst(fst(\<langle>x, succ(fst(x))\<rangle>)))\<close>
+      proof(rule trans, rule pair.snd_conv)
+        have \<open>x = fst(\<langle>x, succ(fst(x))\<rangle>)\<close>
+          by (rule sym, rule pair.fst_conv)
+        hence \<open> fst(x) = fst(fst(\<langle>x, succ(fst(x))\<rangle>))\<close>
+          by(rule subst_context)
+        thus \<open> succ(fst(x)) =
+    succ(fst(fst(\<langle>x, succ(fst(x))\<rangle>)))\<close>
+          by(rule subst_context)
+        qed
+    qed
+  qed
+qed
+
+lemma addgfun: \<open>function(add_g)\<close>
+proof(unfold function_def, unfold add_g_def, rule allI, rule allI, rule impI, rule allI, rule impI)
+  fix x y1 y2
+  assume H1:\<open>\<langle>x, y1\<rangle> \<in> add_g\<close>
+  assume H2:\<open>\<langle>x, y1\<rangle> \<in> add_g\<close>
+  oops
+
 theorem addition:
   assumes \<open>a\<in>nat\<close>
   shows
- \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>nat)) \<and> ((f`0) = a) \<and> satpc(f,nat,add_g))\<close>
+ \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>nat)) \<and> ((f`0) = a) \<and> satpc(f,nat,add_g2))\<close>
 proof(rule rec_thm.recursion, unfold rec_thm_def)
-  show \<open>a \<in> nat \<and> add_g \<in> nat \<times> nat \<rightarrow> nat\<close>
+  show \<open>a \<in> nat \<and> add_g2 \<in> nat \<times> nat \<rightarrow> nat\<close>
   proof
     show \<open>a\<in>nat\<close> by (rule assms(1))
   next
-    show \<open>add_g \<in> nat \<times> nat \<rightarrow> nat\<close>
-      sorry
+    show \<open>add_g2 \<in> nat \<times> nat \<rightarrow> nat\<close>
+    proof(unfold Pi_def, rule CollectI)
+      show \<open>add_g2 \<in> Pow((nat \<times> nat) \<times> nat)\<close>
+        by (rule addg2subpow)
+    next
+      have A2: \<open>nat \<times> nat \<subseteq> domain(add_g2)\<close>
+        by(rule addg2dom)
+      have A3: \<open>function(add_g2)\<close>
+        by (rule addg2fun)
+      show \<open>nat \<times> nat \<subseteq> domain(add_g2) \<and> function(add_g2)\<close>
+        by(rule conjI[OF A2 A3])
+    qed
   qed
 qed
 
