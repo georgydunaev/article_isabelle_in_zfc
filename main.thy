@@ -1826,6 +1826,181 @@ proof(rule rec_thm.recursion, unfold rec_thm_def)
   qed
 qed
 
+
+lemma mychoice:
+  assumes D:\<open>\<forall>x\<in>A.\<exists>y. y\<in>B(x)\<close>
+  shows \<open>\<exists>f. f\<in>Pi(A,B)\<close>
+  oops
+
+lemma basedomsig : \<open>domain(Sigma(A, B)) \<subseteq> A\<close>
+proof
+  fix x
+  assume J:\<open>x \<in> domain(Sigma(A, B))\<close>
+  show \<open>x\<in>A\<close>
+  proof(rule domainE[OF J])
+    fix y
+    assume K:\<open>\<langle>x, y\<rangle> \<in> Sigma(A, B)\<close>
+    show \<open>x\<in>A\<close>
+      by (rule SigmaD1[OF K])
+  qed
+qed
+
+lemma domsig:
+  assumes H:\<open>\<forall>x\<in>A.\<exists>y. y\<in>B(x)\<close>
+  shows \<open>A\<subseteq>domain(Sigma(A, B))\<close>
+proof
+  fix x
+  assume L:\<open>x\<in>A\<close>
+  have U:\<open>\<exists>y. y\<in>B(x)\<close>
+    by (rule bspec[OF H L])
+  show \<open>x \<in> domain(Sigma(A, B))\<close>
+  proof(rule exE[OF U])
+    fix y
+    assume V:\<open>y\<in>B(x)\<close>
+    show \<open>x \<in> domain(Sigma(A, B))\<close>
+    proof
+      show \<open>\<langle>x, y\<rangle> \<in> Sigma(A, B)\<close>
+      proof
+        show \<open>x\<in>A\<close> by (rule L)
+      next
+        show \<open>y\<in>B(x)\<close> by (rule V)
+      qed
+    qed
+  qed
+qed
+
+lemma fuch:
+  assumes H:\<open>\<forall>x\<in>A.\<exists>!y. P(x,y)\<close>
+  shows \<open>\<forall>x\<in>A.\<exists>y. P(x,y)\<close>
+proof
+  fix x
+  assume \<open>x\<in>A\<close>
+  hence \<open>\<exists>!y. P(x,y)\<close>
+    by (rule bspec[OF H])
+  thus \<open>\<exists>y. P(x, y)\<close> 
+    by auto
+qed
+
+definition Only1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>!\<close> 10)
+  where only1_def: \<open>!x. P(x) \<equiv> (\<forall>x.\<forall>y. P(x) \<and> P(y) \<longrightarrow> x = y)\<close>
+
+lemma only1I [intro]: 
+  assumes H: \<open>(\<And>x y. (\<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y))\<close>
+  shows \<open>!x. P(x)\<close>
+  by (unfold only1_def, rule allI, rule allI, rule impI, rule H,
+        erule conjunct1, erule conjunct2)
+
+lemma only1D: \<open>!x. P(x) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
+  apply(unfold only1_def)
+  apply(rule mp, rule spec, erule spec)
+  apply(erule conjI, assumption)
+  done
+
+lemma only1E [elim]:
+  assumes major: \<open>!x. P(x)\<close>
+      and r: \<open>(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> R\<close>
+    shows \<open>R\<close>
+  by (rule r, rule only1D[OF major], assumption+)
+
+(*
+lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
+  by (erule ex1newE)
+
+lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
+  by (erule ex1newE)
+*)
+
+lemma ex1new_def: \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x)) \<and> (!x. P(x))\<close>
+proof (rule iff_reflection, rule iffI)
+  assume Y:\<open>\<exists>!x. P(x)\<close>
+  show \<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
+  proof
+    from Y show \<open>(\<exists>x. P(x))\<close> by auto
+  next
+    show \<open>(!x. P(x))\<close>
+    proof(rule ex1E[OF Y])
+      fix x
+      assume Px:\<open>P(x)\<close>
+      assume J:\<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
+      show \<open>(!x. P(x))\<close>
+      proof
+        fix x1 x2
+        assume Px1:\<open>P(x1)\<close>
+        assume Px2:\<open>P(x2)\<close>
+        show \<open>x1 = x2\<close>
+        proof(rule trans, rule mp, rule spec[OF J], rule Px1)
+          show \<open>x = x2\<close>
+            by (rule sym, rule mp, rule spec[OF J], rule Px2)
+        qed
+      qed
+    qed
+  qed
+next
+  assume Y:\<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
+  hence Y2:\<open>(!x. P(x))\<close> by auto
+  show \<open>\<exists>!x. P(x)\<close>
+  proof
+    from Y show \<open>(\<exists>x. P(x))\<close> by auto
+  next
+    show \<open>\<And>x y. P(x) \<Longrightarrow> P(y) \<Longrightarrow> x = y\<close>
+      by (rule only1D[OF Y2], assumption+)
+  qed
+qed
+
+lemma ex1newI: \<open>\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> \<exists>!x. P(x)\<close>
+  by (unfold ex1new_def, rule conjI, assumption+)
+
+lemma ex1newE: \<open>\<exists>!x. P(x) \<Longrightarrow> (\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> R) \<Longrightarrow> R\<close>
+  apply (unfold ex1new_def)
+  apply (assumption | erule exE conjE)+
+  done
+(*
+lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
+  by (erule ex1newE)
+
+lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
+  by (erule ex1newE)
+*)
+
+lemma mkfun:
+  assumes H:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B(x)\<close>
+  shows \<open>\<exists>f. f\<in>Pi(A,B)\<close>
+proof
+  show \<open>Sigma(A,B)\<in>Pi(A,B)\<close>
+  proof(unfold Pi_def)
+    show \<open>Sigma(A, B) \<in> {f \<in> Pow(Sigma(A, B)) . A \<subseteq> domain(f) \<and> function(f)}\<close>
+    proof
+      show \<open>Sigma(A, B) \<in> Pow(Sigma(A, B))\<close>
+        by (rule PowI, auto)
+    next
+      show \<open>A \<subseteq> domain(Sigma(A, B)) \<and> function(Sigma(A, B))\<close>
+      proof
+        show \<open>A \<subseteq> domain(Sigma(A, B))\<close>
+          by (rule domsig, rule fuch, rule H)
+      next
+        show \<open>function(Sigma(A, B))\<close>
+        proof(rule functionI)
+(* f = {p\<in>Sigma(A,B). }*)
+
+proof(unfold Pi_def)
+  show \<open> \<exists>f. f \<in> {f \<in> Pow(Sigma(A, B)) . A \<subseteq> domain(f) \<and> function(f)}\<close>
+lemma kjhg:
+  assumes D:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B(x) \<and> P(x,y)\<close>
+  shows \<open>\<exists>! f\<in>Pi(A,B). \<forall>x\<in>A. P(x, f`y)\<close>
+proof(rule PiI)
+
+
+lemma kjhg:
+  assumes D:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B \<and> <x,y>\<in>f\<close>
+  shows \<open>f\<in>A\<rightarrow>B\<close>s
+proof(rule PiI)
+  oops
+
+theorem plus:
+  shows
+ \<open>\<exists>!g. ((g \<in> (nat\<rightarrow>(nat\<rightarrow>nat))) \<and> (\<forall>a\<in>nat.(((g`a)`0 = a) \<and> satpc(g`a,nat,add_g2))))\<close>
+  oops
+
 definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ else _\<close>)
   where "fite(A, \<phi>, a, b) == \<Union>{x\<in>A.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
 
