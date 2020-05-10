@@ -8,6 +8,132 @@ then prove V=\<Union>(\<alpha>\<in>Ord).V\<alpha>
 trying to rewrite everything without replacement
 *)
 
+subsection \<open>Only\<close>
+
+text \<open>Quantifier "!x. P(x)" means "at most one object has property P"\<close>
+
+definition Only1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>!\<close> 10)
+  where only1_def: \<open>!x. P(x) \<equiv> (\<forall>x.\<forall>y. P(x) \<and> P(y) \<longrightarrow> x = y)\<close>
+
+lemma only1I [intro]: 
+  assumes H: \<open>(\<And>x y. (\<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y))\<close>
+  shows \<open>!x. P(x)\<close>
+  by (unfold only1_def, rule allI, rule allI, rule impI, rule H,
+        erule conjunct1, erule conjunct2)
+
+lemma only1D: \<open>!x. P(x) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
+  apply(unfold only1_def)
+  apply(rule mp, rule spec, erule spec)
+  apply(erule conjI, assumption)
+  done
+
+lemma only1E [elim]:
+  assumes major: \<open>!x. P(x)\<close>
+      and r: \<open>(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> R\<close>
+    shows \<open>R\<close>
+  by (rule r, rule only1D[OF major], assumption+)
+
+
+lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
+  by auto
+
+lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
+proof -
+  assume Y:\<open>\<exists>!x. P(x)\<close>
+  show \<open>(!x. P(x))\<close>
+  proof(rule ex1E[OF Y])
+    fix x
+    assume Px:\<open>P(x)\<close>
+    assume J:\<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
+    show \<open>(!x. P(x))\<close>
+    proof
+      fix x1 x2
+      assume Px1:\<open>P(x1)\<close>
+      assume Px2:\<open>P(x2)\<close>
+      show \<open>x1 = x2\<close>
+      proof(rule trans, rule mp, rule spec[OF J], rule Px1)
+        show \<open>x = x2\<close>
+          by (rule sym, rule mp, rule spec[OF J], rule Px2)
+      qed
+    qed
+  qed
+qed
+
+subsection \<open>Uniqueness\<close>
+
+text \<open>Another uniqueness definition\<close>
+
+lemma ex1new_def: \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x)) \<and> (!x. P(x))\<close>
+proof (rule iff_reflection, rule iffI)
+  assume Y:\<open>\<exists>!x. P(x)\<close>
+  show \<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
+  proof
+    from Y show \<open>(\<exists>x. P(x))\<close> by auto
+  next
+    from Y show \<open>(!x. P(x))\<close> by (rule ex1newD2)
+  qed
+next
+  assume Y:\<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
+  hence Y2:\<open>(!x. P(x))\<close> by auto
+  show \<open>\<exists>!x. P(x)\<close>
+  proof
+    from Y show \<open>(\<exists>x. P(x))\<close> by auto
+  next
+    show \<open>\<And>x y. P(x) \<Longrightarrow> P(y) \<Longrightarrow> x = y\<close>
+      by (rule only1D[OF Y2], assumption+)
+  qed
+qed
+
+lemma ex1newI: \<open>\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> \<exists>!x. P(x)\<close>
+  by (unfold ex1new_def, rule conjI, assumption+)
+
+lemma ex1newE: \<open>\<exists>!x. P(x) \<Longrightarrow> (\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> R) \<Longrightarrow> R\<close>
+  apply (unfold ex1new_def)
+  apply (assumption | erule exE conjE)+
+  done
+(*
+lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
+  by (erule ex1newE)
+
+lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
+  by (erule ex1newE)
+*)
+
+subsection\<open>Bounded existential quantifier\<close>
+
+definition Bonly :: "[i, i \<Rightarrow> o] \<Rightarrow> o"
+  where "Bonly(A, P) \<equiv> !x. x\<in>A \<and> P(x)"
+
+syntax
+  "_Bonly" :: "[pttrn, i, o] \<Rightarrow> o"  (\<open>(3!_\<in>_./ _)\<close> 10)
+translations
+  "!x\<in>A. P" \<rightleftharpoons> "CONST Bonly(A, \<lambda>x. P)"
+
+lemma bonlyI [intro]: "[| !x. (x\<in>A \<and> P(x)) |] ==> !x\<in>A. P(x)"
+  by (unfold Bonly_def, assumption)
+
+lemma bexE [elim!]: "[| !x\<in>A. P(x);  [| !x. (x\<in>A \<and> P(x)) |] ==> Q |] ==> Q"
+  by (unfold Bonly_def, blast)
+
+definition Bex1 :: "[i, i \<Rightarrow> o] \<Rightarrow> o"
+  where "Bex1(A, P) \<equiv> (\<exists>x\<in>A. P(x)) \<and> (!x\<in>A. P(x))"
+
+syntax
+  "_Bex1" :: "[pttrn, i, o] \<Rightarrow> o"  (\<open>(3\<exists>!_\<in>_./ _)\<close> 10)
+translations
+  "\<exists>!x\<in>A. P" \<rightleftharpoons> "CONST Bex1(A, \<lambda>x. P)"
+
+lemma bex1I [intro]: "[| \<exists>x\<in>A. P(x) ; !x\<in>A. P(x) |] ==> \<exists>!x\<in>A. P(x)"
+  by (unfold Bex1_def, auto)
+
+lemma bex1E [elim!]: "[| \<exists>!x\<in>A. P(x);  [| \<exists>x\<in>A. P(x) ; !x\<in>A. P(x) |] ==> Q |] ==> Q"
+  by (unfold Bex1_def, blast)
+
+subsection \<open>Basic Set Theory\<close>
+
+text \<open>Useful lemmas\<close>
+
+
 lemma pisubsig : \<open>Pi(A,P)\<subseteq>Pow(Sigma(A,P))\<close>
 proof
   fix x
@@ -1881,86 +2007,6 @@ proof
     by auto
 qed
 
-definition Only1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>!\<close> 10)
-  where only1_def: \<open>!x. P(x) \<equiv> (\<forall>x.\<forall>y. P(x) \<and> P(y) \<longrightarrow> x = y)\<close>
-
-lemma only1I [intro]: 
-  assumes H: \<open>(\<And>x y. (\<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y))\<close>
-  shows \<open>!x. P(x)\<close>
-  by (unfold only1_def, rule allI, rule allI, rule impI, rule H,
-        erule conjunct1, erule conjunct2)
-
-lemma only1D: \<open>!x. P(x) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
-  apply(unfold only1_def)
-  apply(rule mp, rule spec, erule spec)
-  apply(erule conjI, assumption)
-  done
-
-lemma only1E [elim]:
-  assumes major: \<open>!x. P(x)\<close>
-      and r: \<open>(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> R\<close>
-    shows \<open>R\<close>
-  by (rule r, rule only1D[OF major], assumption+)
-
-(*
-lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
-  by (erule ex1newE)
-
-lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
-  by (erule ex1newE)
-*)
-
-lemma ex1new_def: \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x)) \<and> (!x. P(x))\<close>
-proof (rule iff_reflection, rule iffI)
-  assume Y:\<open>\<exists>!x. P(x)\<close>
-  show \<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
-  proof
-    from Y show \<open>(\<exists>x. P(x))\<close> by auto
-  next
-    show \<open>(!x. P(x))\<close>
-    proof(rule ex1E[OF Y])
-      fix x
-      assume Px:\<open>P(x)\<close>
-      assume J:\<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
-      show \<open>(!x. P(x))\<close>
-      proof
-        fix x1 x2
-        assume Px1:\<open>P(x1)\<close>
-        assume Px2:\<open>P(x2)\<close>
-        show \<open>x1 = x2\<close>
-        proof(rule trans, rule mp, rule spec[OF J], rule Px1)
-          show \<open>x = x2\<close>
-            by (rule sym, rule mp, rule spec[OF J], rule Px2)
-        qed
-      qed
-    qed
-  qed
-next
-  assume Y:\<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
-  hence Y2:\<open>(!x. P(x))\<close> by auto
-  show \<open>\<exists>!x. P(x)\<close>
-  proof
-    from Y show \<open>(\<exists>x. P(x))\<close> by auto
-  next
-    show \<open>\<And>x y. P(x) \<Longrightarrow> P(y) \<Longrightarrow> x = y\<close>
-      by (rule only1D[OF Y2], assumption+)
-  qed
-qed
-
-lemma ex1newI: \<open>\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> \<exists>!x. P(x)\<close>
-  by (unfold ex1new_def, rule conjI, assumption+)
-
-lemma ex1newE: \<open>\<exists>!x. P(x) \<Longrightarrow> (\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> R) \<Longrightarrow> R\<close>
-  apply (unfold ex1new_def)
-  apply (assumption | erule exE conjE)+
-  done
-(*
-lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
-  by (erule ex1newE)
-
-lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
-  by (erule ex1newE)
-*)
 
 lemma mkfun:
   assumes H:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B(x)\<close>
@@ -1980,13 +2026,74 @@ proof
       next
         show \<open>function(Sigma(A, B))\<close>
         proof(rule functionI)
+          fix x y1 y2
+          assume J1:\<open>\<langle>x, y1\<rangle> \<in> Sigma(A, B)\<close>
+          assume J2:\<open>\<langle>x, y2\<rangle> \<in> Sigma(A, B)\<close>
+          show \<open>y1=y2\<close>
+          proof(rule SigmaE[OF J1], rule SigmaE[OF J2])
+            fix xa1 xa2 ya1 ya2
+            assume M1:\<open>xa1 \<in> A\<close>
+            assume M2:\<open>ya1 \<in> B(xa1)\<close>
+            assume M3:\<open>\<langle>x, y1\<rangle> = \<langle>xa1, ya1\<rangle>\<close>
+            assume M4:\<open>xa2 \<in> A\<close>
+            assume M5:\<open>ya2 \<in> B(xa2)\<close>
+            assume M6:\<open>\<langle>x, y2\<rangle> = \<langle>xa2, ya2\<rangle>\<close>
+
+            from M3 have M31:\<open>x=xa1\<close> by (rule pair.Pair_inject1)
+            from M6 have M61:\<open>x=xa2\<close> by (rule pair.Pair_inject1)
+            from M1 and M31 have M1:\<open>x \<in> A\<close> by auto
+            from M2 and M31 have M2:\<open>ya1 \<in> B(x)\<close> by auto
+            from M5 and M61 have M5:\<open>ya2 \<in> B(x)\<close> by auto
+            from M3 have M32:\<open>y1=ya1\<close> by (rule pair.Pair_inject2)
+            from M6 have M62:\<open>y2=ya2\<close> by (rule pair.Pair_inject2)
+            have \<open>\<exists>!y. y\<in>B(x)\<close> by(rule bspec[OF H M1])
+            hence Q:\<open>!y. y\<in>B(x)\<close> by auto
+            show \<open>y1=y2\<close>
+            proof(rule only1D[OF Q])
+              from M32 and M2 show \<open>y1 \<in> B(x)\<close>
+                by auto
+              from M62 and M5 show \<open>y2 \<in> B(x)\<close>
+                by auto
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma splt:
+  assumes H:\<open>f\<in>Pi(A,\<lambda>x. {y\<in>B(x). P(x,y)})\<close>
+  shows \<open>f\<in>Pi(A,B)\<and>(\<forall>x\<in>A. P(x,f`x))\<close>
+proof -
+  from H
+  have K:\<open>f\<in>{f\<in>Pow(Sigma(A,\<lambda>x. {y\<in>B(x). P(x,y)})). A\<subseteq>domain(f) & function(f)}\<close>
+    by (unfold Pi_def)
+  show ?thesis
+  proof
+    show \<open>f \<in> Pi(A, B)\<close>
+      by (rule CollectE[OF K], unfold Pi_def, rule CollectI, auto)
+  next
+    show \<open>\<forall>x\<in>A. P(x, f ` x)\<close>
+    proof
+      fix x
+      assume L:\<open>x\<in>A\<close>
+      have R:\<open>(f`x)\<in>{y\<in>B(x). P(x,y)}\<close>
+        by (rule func.apply_type[OF H L])
+      show \<open>P(x, f ` x)\<close>
+        by (rule CollectD2[OF R])
+    qed
+  qed
+qed
 (* f = {p\<in>Sigma(A,B). }*)
 
+(*
 proof(unfold Pi_def)
   show \<open> \<exists>f. f \<in> {f \<in> Pow(Sigma(A, B)) . A \<subseteq> domain(f) \<and> function(f)}\<close>
+*)
 lemma kjhg:
   assumes D:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B(x) \<and> P(x,y)\<close>
-  shows \<open>\<exists>! f\<in>Pi(A,B). \<forall>x\<in>A. P(x, f`y)\<close>
+  shows \<open>\<exists>!f. (f \<in> Pi(A,B)\<and> (\<forall>x\<in>A. P(x, f`y)))\<close>
 proof(rule PiI)
 
 
