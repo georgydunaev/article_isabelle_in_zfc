@@ -1,4 +1,4 @@
-theory main imports ZF
+theory recursion imports ZF
 begin
 text \<open>Here we will prove Recursion Theorem and define addition.\<close>
 
