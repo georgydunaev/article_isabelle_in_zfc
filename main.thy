@@ -1,9 +1,9 @@
 theory main imports ZF
 begin
 (* Main aim is to prove Recursion Theorem *)
-subsection \<open>Basic Set Theory\<close>
+section \<open>Basic Set Theory\<close>
 
-text \<open>Useful lemmas\<close>
+text \<open>Useful lemmas about sets, functions and natural numbers\<close>
 
 lemma pisubsig : \<open>Pi(A,P)\<subseteq>Pow(Sigma(A,P))\<close>
 proof
@@ -16,13 +16,13 @@ proof
 qed
 
 lemma apparg:
-  fixes f AA B
-  assumes T0:\<open>f:AA\<rightarrow>B\<close>
+  fixes f A B
+  assumes T0:\<open>f:A\<rightarrow>B\<close>
   assumes T1:\<open>f ` a = b\<close>
-  assumes T2:\<open>a \<in> AA\<close>
+  assumes T2:\<open>a \<in> A\<close>
   shows \<open>\<langle>a, b\<rangle> \<in> f\<close>
 proof(rule iffD2[OF func.apply_iff], rule T0)
-  show T:\<open>a \<in> AA \<and> f ` a = b\<close>
+  show T:\<open>a \<in> A \<and> f ` a = b\<close>
     by (rule conjI[OF T2 T1])
 qed
 
@@ -127,8 +127,6 @@ next
                k \<in> succ(n)\<close>
   proof(rule allI, rule allI, rule impI)
     fix k m
-(*    assume H2:\<open>k \<in> nat\<close>
-    assume H3:\<open>m \<in> nat\<close>*)
     assume H4:\<open>k \<in> m \<and> m \<in> succ(n)\<close>
     hence H4':\<open>m \<in> succ(n)\<close> by (rule conjunct2)
     hence H4'':\<open>m\<in>n \<or> m=n\<close> by (rule succE, auto)
@@ -169,14 +167,6 @@ next
     proof(rule disjE[OF D])
       assume Y1:\<open>succ(x)\<in>x\<close>
       have U:\<open>x\<in>succ(x)\<close> by (rule succI1)
-(*
-      have T:\<open>\<forall>k\<in>nat. \<forall>m\<in>nat. k \<in> m \<and> m \<in> x \<longrightarrow> k \<in> x\<close> 
-        by (rule bspec[OF nat_transitive H0])
-      have T:\<open>\<forall>m\<in>nat. x \<in> m \<and> m \<in> x \<longrightarrow> x \<in> x\<close>
-        by (rule bspec[OF T H0])
-      have T:\<open>x \<in> succ(x) \<and> succ(x) \<in> x \<longrightarrow> x \<in> x\<close>
-        by (rule bspec[OF T H0'])
-*)
       have T:\<open>x \<in> succ(x) \<and> succ(x) \<in> x \<longrightarrow> x \<in> x\<close>
         by (rule spec[OF spec[OF bspec[OF nat_transitive H0]]])
       have R:\<open>x \<in> succ(x) \<and> succ(x) \<in> x\<close>
@@ -185,10 +175,6 @@ next
         by (rule mp[OF T R])
     next
       assume Y1:\<open>succ(x)=x\<close>
-      (*have U:\<open>x\<in>succ(x)\<close> by (rule succI1)
-      from Y1 and U show \<open>x\<in>x\<close> 
-        by auto
-      from Y1 have Y1_r:\<open>x=succ(x)\<close> by (rule sym)*)
       show \<open>x\<in>x\<close> 
         by (rule subst[OF Y1], rule Q)
     qed
@@ -199,7 +185,6 @@ theorem nat_asym : \<open>\<forall>n\<in>nat. \<forall>m. \<not>(n\<in>m \<and> 
 proof(rule ballI, rule allI)
   fix n m
   assume H0:\<open>n \<in> nat\<close>
-(*  assume H1:\<open>m \<in> nat\<close>*)
   have Q:\<open>\<not>(n\<in>n)\<close>
     by(rule bspec[OF nat_xninx H0])
   show \<open>\<not> (n \<in> m \<and> m \<in> n)\<close>
@@ -373,7 +358,32 @@ proof(rule ballI)
   qed
 qed
 
-(* Union of compatible set of functions is a function. *)
+lemma tgb:
+  assumes knat: \<open>k\<in>nat\<close> 
+  assumes D: \<open>t \<in> k \<rightarrow> A\<close>
+  shows  \<open>t \<in> Pow(nat \<times> A)\<close>
+proof -
+  from D
+  have q:\<open>t\<in>{t\<in>Pow(Sigma(k,%_.A)). k\<subseteq>domain(t) & function(t)}\<close>
+    by(unfold Pi_def)
+  have J:\<open>t \<in> Pow(k \<times> A)\<close>
+    by (rule CollectD1[OF q])
+  have G:\<open>k \<times> A \<subseteq> nat \<times> A\<close>
+  proof(rule func.Sigma_mono)
+    from knat
+    show \<open>k\<subseteq>nat\<close>
+      by (rule QUniv.naturals_subset_nat)
+  next
+    show \<open>\<And>x. x \<in> k \<Longrightarrow> A \<subseteq> A\<close>
+      by auto
+  qed
+  show \<open>t \<in> Pow(nat \<times> A)\<close>
+    by (rule subsetD, rule func.Pow_mono[OF G], rule J)
+qed
+
+section \<open>Compatible set\<close>
+text \<open>Union of compatible set of functions is a function.\<close>
+
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
   where "compat(f1,f2) == \<forall>x.\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
 
@@ -525,22 +535,6 @@ proof -
   qed
 qed
 
-
-(*
-  have \<open>f ` a = v\<close>
-    sorry
-  proof(rule mkel, rule apparg)
-    show \<open>(\<Union>S)`a = v\<close> by (rule N)
-    show \<open>a\<in>A\<close> by (rule T)
-    oops
-*)
- (*todo!*)
-(*  show \<open>f ` a = v\<close> *)
-
-
-(* Natural numbers are linearly ordered by \<in> *)
-
-
 (* *. Recursion theorem *)
 definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
   where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
@@ -575,18 +569,40 @@ lemma partcompE [elim] :
   shows \<open>E\<close>
   by (rule 2, rule partcompD1[OF 1], rule partcompD2[OF 1], rule partcompD3[OF 1])
 
+(* if we add ordered pair in the middle of partial computation then
+it will not change *)
+lemma addmiddle:
+(*  fixes  t m a g*)
+  assumes mnat:\<open>m\<in>nat\<close>
+  assumes F:\<open>partcomp(A,t,m,a,g)\<close>
+  assumes xinm:\<open>x\<in>m\<close>
+  shows \<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) = t\<close>
+proof(rule partcompE[OF F])
+  assume F1:\<open>t \<in> succ(m) \<rightarrow> A\<close>
+  assume F2:\<open>t ` 0 = a\<close>
+  assume F3:\<open>satpc(t, m, g)\<close>
+  from F3
+  have W:\<open>\<forall>n\<in>m. t ` succ(n) = g ` \<langle>t ` n, n\<rangle>\<close>
+    by (unfold satpc_def)
+  have U:\<open>t ` succ(x) = g ` \<langle>t ` x, x\<rangle>\<close>
+    by (rule bspec[OF W xinm])
+  have E:\<open>\<langle>succ(x), (g ` \<langle>t ` x, x\<rangle>)\<rangle> \<in> t\<close>
+  proof(rule apparg[OF F1 U])
+    show \<open>succ(x) \<in> succ(m)\<close>
+      by(rule mp[OF bspec[OF le_succ mnat] xinm])
+  qed
+  show ?thesis
+    by (rule equalities.cons_absorb[OF E])
+qed
 
-(* F *)
+
+(* Set of functions "F" *)
 definition pcs :: \<open>[i,i,i]\<Rightarrow>i\<close>
   where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m\<in>nat. partcomp(A,t,m,a,g)}\<close>
 
 lemma pcs_uniq : 
   assumes F1:\<open>m1\<in>nat\<close>
   assumes F2:\<open>m2\<in>nat\<close>
-(*
-assumes H1:\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
-  assumes H2:\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,m2,g)\<close>
-*)
   assumes H1: \<open>partcomp(A,f1,m1,a,g)\<close>
   assumes H2: \<open>partcomp(A,f2,m2,a,g)\<close>
   shows \<open>\<forall>n\<in>nat. n\<in>succ(m1) \<and> n\<in>succ(m2) \<longrightarrow> f1`n = f2`n\<close>
@@ -653,27 +669,6 @@ proof
   qed
 qed
 
-(*
-lemma 
-  assumes 1:\<open>q\<in>B\<close>
-  shows \<open>domain(A\<times>B) = A\<close>
-proof
-  show \<open>domain(A \<times> B) \<subseteq> A\<close>
-  proof(rule subsetI)
-    show \<open> \<And>x. x \<in> domain(A \<times> B) \<Longrightarrow>
-         x \<in> A\<close>
-      by auto
-  qed
-next
-show \<open>A \<subseteq> domain(A \<times> B)\<close>
-proof
-  show \<open>\<And>x. x \<in> A \<Longrightarrow>
-         x \<in> domain(A \<times> B)\<close>
-  proof(rule domainI,auto)
-    show \<open>q\<in>A\<close> by (rule 1)
-  sorry
-*)
-
 lemma natdomfunc:
   assumes 1:\<open>q\<in>A\<close>
   assumes J0:\<open>f1 \<in> Pow(nat \<times> A)\<close>
@@ -692,18 +687,6 @@ proof -
     by(rule subst[OF R], rule F)
 qed
 
-(* lemma domain_of_fun: "f \<in> Pi(A,B) ==> domain(f)=A" *)
-(*func.domain_type
-lemma wertyu:
-  assumes \<open>\<langle>x, y1\<rangle> \<in> f1\<close> 
-  and \<open>(f1:succ(m1)\<rightarrow>A)\<close>
-  shows \<open>x \<in> succ(m1)\<close>
-proof (rule domain_of_fun[OF ])
-
-lemma domain_of_fun: "f \<in> Pi(A,B) ==> domain(f)=A"
-by (unfold Pi_def, blast)
-*)
-
 lemma pcs_lem :
   assumes 1:\<open>q\<in>A\<close>
   shows \<open>compatset(pcs(A, a, g))\<close>
@@ -713,7 +696,6 @@ proof (*(rule compatsetI)*)
   then have H1':\<open>f1 \<in> {t\<in>Pow(nat*A). \<exists>m\<in>nat. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
   hence H1'A:\<open>f1 \<in> Pow(nat*A)\<close> by auto
   hence H1'A:\<open>f1 \<subseteq> (nat*A)\<close> by auto
-    (*(t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,succ(m),g)*)
   assume H2:\<open>f2 \<in> pcs(A, a, g)\<close>
   then have H2':\<open>f2 \<in> {t\<in>Pow(nat*A). \<exists>m\<in>nat. partcomp(A,t,m,a,g)}\<close> by (unfold pcs_def)
   show \<open>compat(f1, f2)\<close>
@@ -731,12 +713,9 @@ proof (*(rule compatsetI)*)
       proof(rule bexE[OF J2], rule bexE[OF J3])
         fix m1 m2
         assume K1:\<open>partcomp(A, f1, m1, a, g)\<close>
-(*        hence K1':\<open>(f1:succ(m1)\<rightarrow>A) \<and> (f1`0=a) \<and> satpc(f1,m1,g)\<close>
-          by (unfold partcomp_def)*)
         assume K2:\<open>partcomp(A, f2, m2, a, g)\<close>
         hence K2':\<open>(f2:succ(m2)\<rightarrow>A) \<and> (f2`0=a) \<and> satpc(f2,m2,g)\<close>
           by (unfold partcomp_def)
-(*        from K1' have K1'A:\<open>(f1:succ(m1)\<rightarrow>A)\<close> by auto*)
         from K1 have K1'A:\<open>(f1:succ(m1)\<rightarrow>A)\<close> by (rule partcompD1)
         from K2' have K2'A:\<open>(f2:succ(m2)\<rightarrow>A)\<close> by auto
         from K1'A have K1'AD:\<open>domain(f1) = succ(m1)\<close> 
@@ -757,9 +736,6 @@ proof (*(rule compatsetI)*)
           show \<open>m2 \<in> domain(f2)\<close>
             by (rule ssubst[OF K2'AD], auto)
         qed
-            (* P1:\<open>\<langle>x, y1\<rangle> \<in> f1\<close>
-               H1'A:\<open>f1 \<subseteq> (nat*A)\<close>
-            *)
         have G1:\<open>\<langle>x, y1\<rangle> \<in> (nat*A)\<close>
           by(rule subsetD[OF H1'A P1])
         have KK:\<open>x\<in>nat\<close>
@@ -768,7 +744,7 @@ proof (*(rule compatsetI)*)
 so we can have both  x \<in> ?m1.2 \<and> x \<in> ?m2.2 
 how to prove that m1 \<in> nat ? from J0 !  f1 is a subset of nat \<times> A *)
         have W:\<open>f1`x=f2`x\<close>
-        proof(rule mp[OF bspec[OF pcs_uniq KK] ]) (*good!*)
+        proof(rule mp[OF bspec[OF pcs_uniq KK] ])
           show \<open>m1 \<in> nat\<close>
             by (rule m1nat)
         next
@@ -793,21 +769,11 @@ how to prove that m1 \<in> nat ? from J0 !  f1 is a subset of nat \<times> A *)
         qed
         from L1 and W and L2
         show \<open>y1 = y2\<close> by auto
-(*
-  shows \<open>\<forall>n\<in>nat. n\<in>m1 \<and> n\<in>m2 \<longrightarrow> f1`n = f2`n\<close>
- x < succ(m1) & x < succ(m2)
-x \<in> nat
-nat_induct_bound :
-  assumes H0:\<open>P(0)\<close>
-  assumes H1:\<open>!!x. x\<in>nat \<Longrightarrow> P(x) \<Longrightarrow> P(succ(x))\<close>
-  shows \<open>\<forall>n\<in>nat. P(n)\<close>
-*)
       qed
     qed
   qed
 qed
 
- (* apply (unfold pcs_def, unfold compatset_def)*)
 theorem fuissu : \<open>f \<in> X -> Y \<Longrightarrow> f \<subseteq> X\<times>Y\<close>
 proof
   fix w
@@ -1052,23 +1018,7 @@ proof
     by (rule zainupcs)
 qed
 
-lemma hhc : 
-  assumes 1:\<open>A\<subseteq>C\<close>
-  assumes 2:\<open>a\<in>C\<close>
-  shows \<open>cons(a,A)\<subseteq>C\<close>
-proof
-  from 1 and 2 show \<open>a \<in> C \<and> A \<subseteq> C\<close> by auto
-qed
-
-
-(* push_back a pair to the partial computation t *)
-(* sublocale pbpc =
-  fixes t m
-  assumes H1:\<open>partcomp(A,t,m,a,g)\<close>
-begin
-
-end*)
-
+(* push an ordered pair to the end of partial computation t *)
 lemma shortlem :
   assumes mnat:\<open>m\<in>nat\<close>
   assumes F:\<open>partcomp(A,t,m,a,g)\<close>
@@ -1144,7 +1094,6 @@ proof(rule partcompE[OF F])
             show \<open>succ(n) \<noteq> succ(m)\<close>
               by(rule contrapos, rule upair.mem_imp_not_eq, rule Y, rule upair.succ_inject, assumption)
           next
-(* upair.succ_inject: succ(?m) = succ(?n) \<Longrightarrow> ?m = ? *)
             have X:\<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) ` n = t ` n\<close>
             proof(rule trans, rule func.fun_extend_apply[OF F1], rule upair.mem_not_refl)
               show \<open>(if n = succ(m) then g ` \<langle>t ` m, m\<rangle> else t ` n) = t ` n\<close>
@@ -1154,7 +1103,6 @@ proof(rule partcompE[OF F])
                   assume q:"n=succ(m)"
                   from q and Y have M:\<open>succ(m)\<in>m\<close>
                     by auto
-                  (*  Nat.succ_in_naturalD: succ(?i) \<in> ?k \<Longrightarrow> ?k \<in> nat \<Longrightarrow> ?i \<in> ?k *)
                   show \<open>m\<in>m\<close>
                     by(rule Nat.succ_in_naturalD[OF M mnat])
                 next
@@ -1175,53 +1123,6 @@ proof(rule partcompE[OF F])
     qed
   qed
 qed
-
-(*\<open>partcomp(A,cons(\<langle>succ(m), g ` <t`m, m>\<rangle>, t),succ(m),a,g)\<close>*)
-lemma shortlem2  :
-  assumes H:\<open>t \<in> pcs(A, a, g)\<close>
-  shows \<open>t \<in> pcs(A, a, g)\<close>
-  oops
-
-(*
-lemma l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
-proof
-  fix x
-  assume G:\<open>x\<in>nat\<close>
-  show \<open>x \<in> domain(\<Union>pcs(A, a, g))\<close>
-  proof(rule complete_induct[of x])
-    fix x
-    assume \<open>x \<in> nat\<close>
-    assume \<open>(\<And>y. y \<in> x \<Longrightarrow> y \<in> domain(\<Union>pcs(A, a, g)))\<close>
-    show \<open>x \<in> domain(\<Union>pcs(A, a, g))\<close>
-    proof
-*)
-
-(* if we add ordered pair in the middle of partial computation then
-it will not change *)
-lemma addmiddle:
-(*  fixes  t m a g*)
-  assumes mnat:\<open>m\<in>nat\<close>
-  assumes F:\<open>partcomp(A,t,m,a,g)\<close>
-  assumes xinm:\<open>x\<in>m\<close>
-  shows \<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) = t\<close>
-proof(rule partcompE[OF F])
-  assume F1:\<open>t \<in> succ(m) \<rightarrow> A\<close>
-  assume F2:\<open>t ` 0 = a\<close>
-  assume F3:\<open>satpc(t, m, g)\<close>
-  from F3
-  have W:\<open>\<forall>n\<in>m. t ` succ(n) = g ` \<langle>t ` n, n\<rangle>\<close>
-    by (unfold satpc_def)
-  have U:\<open>t ` succ(x) = g ` \<langle>t ` x, x\<rangle>\<close>
-    by (rule bspec[OF W xinm])
-  have E:\<open>\<langle>succ(x), (g ` \<langle>t ` x, x\<rangle>)\<rangle> \<in> t\<close>
-  proof(rule apparg[OF F1 U])
-    show \<open>succ(x) \<in> succ(m)\<close>
-      by(rule mp[OF bspec[OF le_succ mnat] xinm])
-  qed
-  show ?thesis
-    by (rule equalities.cons_absorb[OF E])
-qed
-
 
 lemma l2:\<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
 proof
@@ -1299,10 +1200,6 @@ proof
                 qed
               next 
                 show \<open>\<exists>m \<in> nat. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
-(*xinsm:\<open>x \<in> succ(m)\<close>
-      next
-        show \<open>0 \<in> nat\<close> by auto
-*)
                 proof(rule succE[OF xinsm])
                   assume xeqm:\<open>x=m\<close>
                   show \<open>\<exists>m \<in> nat. partcomp(A, cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t), m, a, g)\<close>
@@ -1318,7 +1215,6 @@ proof
                   next
                     from Q1 show \<open>succ(x) \<in> nat\<close> by auto
                   qed
-(*          assume E22:\<open>partcomp(A,t,m,a,g)\<close> *)
                 next
                   assume xinm:\<open>x\<in>m\<close>
                   have lmm:\<open>cons(\<langle>succ(x), g ` \<langle>t ` x, x\<rangle>\<rangle>, t) = t\<close>
@@ -1340,7 +1236,6 @@ proof
       by (rule l2')
   qed
 qed
-
 
 lemma useful : \<open>\<forall>m\<in>nat. \<exists>t. partcomp(A,t,m,a,g)\<close>
 proof(rule nat_induct_bound)
@@ -1401,35 +1296,11 @@ lemma ballE2:
   assumes \<open>P(x) ==> Q\<close>
   shows Q
   by (rule assms(3), rule bspec, rule assms(1), rule assms(2))
-
 (*
   where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
   where \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,m,g)\<close>
   where \<open>pcs(A,a,g) == {t\<in>Pow(nat*A). \<exists>m. partcomp(A,t,m,a,g)}\<close>
 *)
-
-lemma tgb:
-  assumes knat: \<open>k\<in>nat\<close> 
-  assumes D: \<open>t \<in> k \<rightarrow> A\<close>
-  shows  \<open>t \<in> Pow(nat \<times> A)\<close>
-proof -
-  from D
-  have q:\<open>t\<in>{t\<in>Pow(Sigma(k,%_.A)). k\<subseteq>domain(t) & function(t)}\<close>
-    by(unfold Pi_def)
-  have J:\<open>t \<in> Pow(k \<times> A)\<close>
-    by (rule CollectD1[OF q])
-  have G:\<open>k \<times> A \<subseteq> nat \<times> A\<close>
-  proof(rule func.Sigma_mono)
-    from knat
-    show \<open>k\<subseteq>nat\<close>
-      by (rule QUniv.naturals_subset_nat)
-  next
-    show \<open>\<And>x. x \<in> k \<Longrightarrow> A \<subseteq> A\<close>
-      by auto
-  qed
-  show \<open>t \<in> Pow(nat \<times> A)\<close>
-    by (rule subsetD, rule func.Pow_mono[OF G], rule J)
-qed
 
 lemma l6new: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
 proof (unfold satpc_def, rule ballI)
@@ -1633,6 +1504,22 @@ proof(rule rec_thm.recursion, unfold rec_thm_def)
 qed
 
 (* ========END========= *)
+
+
+(*
+  have \<open>f ` a = v\<close>
+    sorry
+  proof(rule mkel, rule apparg)
+    show \<open>(\<Union>S)`a = v\<close> by (rule N)
+    show \<open>a\<in>A\<close> by (rule T)
+    oops
+*)
+ (*todo!*)
+(*  show \<open>f ` a = v\<close> *)
+
+
+(* Natural numbers are linearly ordered by \<in> *)
+
 
 definition add_g2 :: \<open>i\<close>
   where add_g2_def : \<open>add_g2 == {p \<in> (nat \<times> nat) \<times> nat. snd(p) = succ(fst(fst(p)))}\<close>
@@ -2187,6 +2074,15 @@ proof
     qed
   qed
 qed
+
+lemma hhc : 
+  assumes 1:\<open>A\<subseteq>C\<close>
+  assumes 2:\<open>a\<in>C\<close>
+  shows \<open>cons(a,A)\<subseteq>C\<close>
+proof
+  from 1 and 2 show \<open>a \<in> C \<and> A \<subseteq> C\<close> by auto
+qed
+
 
 end
 
