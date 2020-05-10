@@ -1,138 +1,9 @@
 theory main imports ZF
 begin
 (* Main aim is to prove Recursion Theorem *)
-(* 
-then prove transfinite induction & recursion
-then define Von Neumann hierarchy
-then prove V=\<Union>(\<alpha>\<in>Ord).V\<alpha>
-trying to rewrite everything without replacement
-*)
-
-subsection \<open>Only\<close>
-
-text \<open>Quantifier "!x. P(x)" means "at most one object has property P"\<close>
-
-definition Only1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>!\<close> 10)
-  where only1_def: \<open>!x. P(x) \<equiv> (\<forall>x.\<forall>y. P(x) \<and> P(y) \<longrightarrow> x = y)\<close>
-
-lemma only1I [intro]: 
-  assumes H: \<open>(\<And>x y. (\<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y))\<close>
-  shows \<open>!x. P(x)\<close>
-  by (unfold only1_def, rule allI, rule allI, rule impI, rule H,
-        erule conjunct1, erule conjunct2)
-
-lemma only1D: \<open>!x. P(x) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
-  apply(unfold only1_def)
-  apply(rule mp, rule spec, erule spec)
-  apply(erule conjI, assumption)
-  done
-
-lemma only1E [elim]:
-  assumes major: \<open>!x. P(x)\<close>
-      and r: \<open>(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> R\<close>
-    shows \<open>R\<close>
-  by (rule r, rule only1D[OF major], assumption+)
-
-
-lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
-  by auto
-
-lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
-proof -
-  assume Y:\<open>\<exists>!x. P(x)\<close>
-  show \<open>(!x. P(x))\<close>
-  proof(rule ex1E[OF Y])
-    fix x
-    assume Px:\<open>P(x)\<close>
-    assume J:\<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
-    show \<open>(!x. P(x))\<close>
-    proof
-      fix x1 x2
-      assume Px1:\<open>P(x1)\<close>
-      assume Px2:\<open>P(x2)\<close>
-      show \<open>x1 = x2\<close>
-      proof(rule trans, rule mp, rule spec[OF J], rule Px1)
-        show \<open>x = x2\<close>
-          by (rule sym, rule mp, rule spec[OF J], rule Px2)
-      qed
-    qed
-  qed
-qed
-
-subsection \<open>Uniqueness\<close>
-
-text \<open>Another uniqueness definition\<close>
-
-lemma ex1new_def: \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x)) \<and> (!x. P(x))\<close>
-proof (rule iff_reflection, rule iffI)
-  assume Y:\<open>\<exists>!x. P(x)\<close>
-  show \<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
-  proof
-    from Y show \<open>(\<exists>x. P(x))\<close> by auto
-  next
-    from Y show \<open>(!x. P(x))\<close> by (rule ex1newD2)
-  qed
-next
-  assume Y:\<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
-  hence Y2:\<open>(!x. P(x))\<close> by auto
-  show \<open>\<exists>!x. P(x)\<close>
-  proof
-    from Y show \<open>(\<exists>x. P(x))\<close> by auto
-  next
-    show \<open>\<And>x y. P(x) \<Longrightarrow> P(y) \<Longrightarrow> x = y\<close>
-      by (rule only1D[OF Y2], assumption+)
-  qed
-qed
-
-lemma ex1newI: \<open>\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> \<exists>!x. P(x)\<close>
-  by (unfold ex1new_def, rule conjI, assumption+)
-
-lemma ex1newE: \<open>\<exists>!x. P(x) \<Longrightarrow> (\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> R) \<Longrightarrow> R\<close>
-  apply (unfold ex1new_def)
-  apply (assumption | erule exE conjE)+
-  done
-(*
-lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
-  by (erule ex1newE)
-
-lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
-  by (erule ex1newE)
-*)
-
-subsection\<open>Bounded existential quantifier\<close>
-
-definition Bonly :: "[i, i \<Rightarrow> o] \<Rightarrow> o"
-  where "Bonly(A, P) \<equiv> !x. x\<in>A \<and> P(x)"
-
-syntax
-  "_Bonly" :: "[pttrn, i, o] \<Rightarrow> o"  (\<open>(3!_\<in>_./ _)\<close> 10)
-translations
-  "!x\<in>A. P" \<rightleftharpoons> "CONST Bonly(A, \<lambda>x. P)"
-
-lemma bonlyI [intro]: "[| !x. (x\<in>A \<and> P(x)) |] ==> !x\<in>A. P(x)"
-  by (unfold Bonly_def, assumption)
-
-lemma bexE [elim!]: "[| !x\<in>A. P(x);  [| !x. (x\<in>A \<and> P(x)) |] ==> Q |] ==> Q"
-  by (unfold Bonly_def, blast)
-
-definition Bex1 :: "[i, i \<Rightarrow> o] \<Rightarrow> o"
-  where "Bex1(A, P) \<equiv> (\<exists>x\<in>A. P(x)) \<and> (!x\<in>A. P(x))"
-
-syntax
-  "_Bex1" :: "[pttrn, i, o] \<Rightarrow> o"  (\<open>(3\<exists>!_\<in>_./ _)\<close> 10)
-translations
-  "\<exists>!x\<in>A. P" \<rightleftharpoons> "CONST Bex1(A, \<lambda>x. P)"
-
-lemma bex1I [intro]: "[| \<exists>x\<in>A. P(x) ; !x\<in>A. P(x) |] ==> \<exists>!x\<in>A. P(x)"
-  by (unfold Bex1_def, auto)
-
-lemma bex1E [elim!]: "[| \<exists>!x\<in>A. P(x);  [| \<exists>x\<in>A. P(x) ; !x\<in>A. P(x) |] ==> Q |] ==> Q"
-  by (unfold Bex1_def, blast)
-
 subsection \<open>Basic Set Theory\<close>
 
 text \<open>Useful lemmas\<close>
-
 
 lemma pisubsig : \<open>Pi(A,P)\<subseteq>Pow(Sigma(A,P))\<close>
 proof
@@ -154,7 +25,6 @@ proof(rule iffD2[OF func.apply_iff], rule T0)
   show T:\<open>a \<in> AA \<and> f ` a = b\<close>
     by (rule conjI[OF T2 T1])
 qed
-
 
 theorem nat_induct_bound :
   assumes H0:\<open>P(0)\<close>
@@ -503,22 +373,6 @@ proof(rule ballI)
   qed
 qed
 
-(* todo
-theorem nat_elem_is_ss:\<open>\<forall>m\<in>nat. n\<in>m \<longrightarrow> n\<subseteq>m\<close>
-proof(rule nat_induct_bound)
-  sorry (**)
-
-theorem nat_ldfghj:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. n\<subseteq>m \<and> n\<noteq>m \<longrightarrow> n\<in>m\<close>
-  sorry
-*)
-
-(*
-do it through ordinals.
-*)
-(*
-theorem nat_linord_ss:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<subseteq>n\<or>n\<subseteq>m\<close>
-  sorry
-*)
 (* Union of compatible set of functions is a function. *)
 definition compat :: \<open>[i,i]\<Rightarrow>o\<close>
   where "compat(f1,f2) == \<forall>x.\<forall>y1.\<forall>y2.\<langle>x,y1\<rangle> \<in> f1 \<and> \<langle>x,y2\<rangle> \<in> f2 \<longrightarrow> y1=y2"
@@ -1542,7 +1396,6 @@ next
 qed
 
 lemma ballE2: 
-(*"[| \<forall>x\<in>A. P(x); x\<in>A ; P(x) ==> Q |] ==> Q"*)
   assumes \<open>\<forall>x\<in>AA. P(x)\<close>
   assumes \<open>x\<in>AA\<close>
   assumes \<open>P(x) ==> Q\<close>
@@ -1648,120 +1501,10 @@ proof (unfold satpc_def, rule ballI)
     qed
   qed
 qed
-(*
-  have ndom:\<open>n\<in>domain(\<Union>pcs(A, a, g))\<close>
-    by (rule subsetD[OF l2 nnat])
-  have sndom:\<open>succ(n)\<in>domain(\<Union>pcs(A, a, g))\<close>
-    by (rule subsetD[OF l2 snnat])
-  show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
-  proof(rule domainE[OF ndom])
-    fix y 
-    assume B:\<open>\<langle>n, y\<rangle> \<in> \<Union>pcs(A, a, g)\<close>
-    show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
-    proof(rule UnionE[OF B])
-      fix t
-      assume \<open>\<langle>n, y\<rangle> \<in> t\<close>
-      assume I0:\<open>t \<in> pcs(A, a, g)\<close>
-      hence I1:\<open>t\<in>{t\<in>Pow(nat*A). \<exists>m\<in>nat. partcomp(A,t,m,a,g)}\<close>
-        by (unfold pcs_def)
-      hence I2:\<open>\<exists>m\<in>nat. partcomp(A,t,m,a,g)\<close>
-        by auto
-      show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
-      proof(rule bexE[OF I2])
-        fix m
-        assume mnat:\<open>m\<in>nat\<close>
-        assume I4:\<open>partcomp(A, t, m, a, g)\<close>
-(* \<open>partcomp(A,t,m,a,g) == (t:succ(m)\<rightarrow>A) \<and> (t`0=a) \<and> satpc(t,m,g)\<close> *)
- (*       hence I5:\<open>\<close>*)
-        show \<open>(\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
-          sorry
-      qed
-    qed
-  qed
-qed
-*)
-(*sketch - *)
-(*
-lemma l6: \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
-proof (unfold satpc_def)
-  show \<open>\<forall>n\<in>nat.
-       (\<Union>pcs(A, a, g)) ` succ(n) = g ` \<langle>(\<Union>pcs(A, a, g)) ` n, n\<rangle>\<close>
-  proof (rule nat_induct_bound)
-    show \<open>(\<Union>pcs(A, a, g)) ` 1 = g ` \<langle>(\<Union>pcs(A, a, g)) ` 0, 0\<rangle>\<close>
-      sorry
-  next
-    fix x
-    assume 1: \<open>x\<in>nat\<close>
-    assume 2: \<open>(\<Union>pcs(A, a, g)) ` succ(x) =
-         g ` \<langle>(\<Union>pcs(A, a, g)) ` x, x\<rangle>\<close>
-    show \<open>(\<Union>pcs(A, a, g)) ` succ(succ(x)) =
-         g ` \<langle>(\<Union>pcs(A, a, g)) ` succ(x), succ(x)\<rangle>\<close>
-      sorry
-  qed
-qed
-*)
-(*
-        have A1:\<open>\<Union>pcs(A,a,g)\<in>{f\<in>Pow(nat*A). nat\<subseteq>domain(f) & function(f)}\<close>
-      proof 
-        show \<open>\<Union>pcs(A, a, g) \<in> Pow(nat \<times> A)\<close>
-        proof 
-          show \<open>\<Union>pcs(A, a, g) \<subseteq> nat \<times> A\<close>
-          proof(unfold pcs_def)
-            show \<open> \<Union>{t \<in> Pow(nat \<times> A) . \<exists>m. partcomp (A, t, m, a, g)} \<subseteq> nat \<times> A\<close>
-             (* by blast*)
-              sorry
-          qed
-        qed
-      next
-        show \<open>nat \<subseteq> domain(\<Union>pcs(A, a, g)) \<and> function(\<Union>pcs(A, a, g))\<close>
-        proof
-          show \<open>nat \<subseteq> domain(\<Union>pcs(A, a, g))\<close>
-          proof(unfold pcs_def)
-            show \<open>nat \<subseteq> domain(\<Union>{t \<in> Pow(nat \<times> A) . \<exists>m. partcomp(A, t, m, a, g)})\<close>
-              sorry (*by blast*)
-          qed
-        next
-          have C : \<open>compatset(pcs(A, a, g))\<close> 
-            by (rule pcs_lem)
-          show \<open>function(\<Union>pcs(A, a, g))\<close>
-            by (rule compatsetunionfun[OF C])
-        qed
-      qed
-    next
-      from A1 show \<open>\<Union>pcs(A,a,g) \<in> nat -> A\<close>
-      proof(fold Pi_def)
-        assume \<open>\<Union>pcs(A, a, g) \<in> nat -> A\<close>
-        then show \<open>\<Union>pcs(A, a, g) \<in> nat -> A\<close>
-          by assumption
-      qed
-    next
-      show \<open>(\<Union>pcs(A, a, g)) ` 0 = a \<and> satpc(\<Union>pcs(A, a, g), nat, g)\<close>
-      proof 
-        show \<open>(\<Union>pcs(A, a, g)) ` 0 = a\<close>
-          sorry
-      next
-        show \<open>satpc(\<Union>pcs(A, a, g), nat, g)\<close>
-          sorry
-      qed
-    qed
-  qed
-*)
-(*
-  fixes A a g
-  assumes H1:\<open>a \<in> A\<close>
-  assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
-*)
+
 theorem recursion:
   shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,g))\<close>
 (* where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close> *)
-(*
-  fixes A n a1 a2 g
-  assumes H11:\<open>a1 \<in> A\<close>
-  assumes H12:\<open>a2 \<in> A\<close>
-  assumes H2:\<open>g : ((A*n)\<rightarrow>A)\<close>
-theorem finite_recursion:
-  shows \<open>\<exists>!f. ((f \<in> (n\<rightarrow>A)) \<and> ((f`0) = a1) \<and> (f`n) = a2) \<and> satpc(f,n,g))\<close>
-*)
 proof 
   show \<open>\<exists>f. f \<in> nat -> A \<and> f ` 0 = a \<and> satpc(f, nat, g)\<close>
   proof 
@@ -1794,67 +1537,23 @@ qed
 end
 
 (* Definition of addition *)
-(*
-locale rec_thm =
-  fixes A a g
-  assumes H1:\<open>a \<in> A\<close>
-  assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
-theorem recursion:
-  shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,g))\<close>
-  oops
-end
-*)
+
+text \<open>
+Let's define function t = (a+_).
+Firstly we need to define a function g:nat \<times> nat \<rightarrow> nat, such that
+g`\<langle>t`n, n\<rangle> = t`succ(n) = a + (n + 1) = (a + n) + 1 = (t`n) + 1
+So g`\<langle>a, b\<rangle> = a + 1 and g(p) = succ(pr1(p))
+and \<open>satpc(t,\<alpha>,g) \<Longleftrightarrow> \<forall>n \<in> \<alpha> . t`succ(n) = succ(t`n)\<close>.
+\<close>
 
 definition add_g :: \<open>i\<close>
-  where add_g_def : \<open>add_g == {p \<in> (nat \<times> nat) \<times> nat . 
-snd(p) = succ(fst(fst(p)))}\<close>
+  where add_g_def : \<open>add_g == \<lambda>x\<in>(nat*nat). succ(fst(x))\<close>
 
-definition add_g2 :: \<open>i\<close>
-  where add_g2_def : \<open>add_g2 == \<lambda>x\<in>(nat*nat). succ(fst(x))\<close>
+lemma addgfun: \<open>function(add_g)\<close>
+  by (unfold add_g_def, rule func.function_lam)
 
-lemma addg2fun: \<open>function(add_g2)\<close>
-  by (unfold add_g2_def, rule func.function_lam)
-
-
-(*func.function_lam: function(\<lambda>x\<in>?A. ?b(x))*)
-(*
-definition add_g :: \<open>i\<close>
-  where add_g_def : \<open>add_g == {succ(fst(p)). p \<in> nat \<times> nat}\<close>
-fixed a
-t = (a+_)
-
-g`\<langle>t`n, n\<rangle> = t`succ(n) = a+(n+1) = (a+n)+1 = t`n +1
-g`\<langle>a, b\<rangle> = a + 1
-g:nat \<times> nat \<rightarrow> nat
-g(p) = succ(pr1(p))
-g = {succ(pr1(p)). p \<in> nat \<times> nat} 
-t`succ(n)
-add_g == {\<langle>\<langle>a,b\<rangle>,a\<rangle>. a\<in>nat\<and> b\<in>nat} {z \<in> nat*nat . \<langle>x,x\<rangle> }
-definition satpc :: \<open>[i,i,i] \<Rightarrow> o \<close>
-  where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close>
-*)
-
-theorem addgsubpow : \<open>add_g \<in> Pow((nat \<times> nat) \<times> nat)\<close>
-proof
-  show \<open>add_g \<subseteq> (nat \<times> nat) \<times> nat\<close>
-  proof
-    fix x
-    assume \<open>x \<in> add_g\<close>
-    hence G:\<open>x \<in> {p \<in> (nat \<times> nat) \<times> nat . snd(p) = succ(fst(fst(p)))}\<close>
-      by (unfold add_g_def)
-    show \<open>x \<in> (nat \<times> nat) \<times> nat\<close>
-      by(rule CollectD1[OF G])
-  qed
-qed
-
-(*
-func.lam_type:
-    (\<And>x. x \<in> ?A \<Longrightarrow> ?b(x) \<in> ?B(x)) \<Longrightarrow> (\<lambda>x\<in>?A. ?b(x)) \<in> Pi(?A, ?B)
-*)
-
-
-lemma addg2subpow : \<open>add_g2 \<in> Pow((nat \<times> nat) \<times> nat)\<close>
-proof (unfold add_g2_def, rule subsetD)
+lemma addgsubpow : \<open>add_g \<in> Pow((nat \<times> nat) \<times> nat)\<close>
+proof (unfold add_g_def, rule subsetD)
   show \<open>(\<lambda>x\<in>nat \<times> nat. succ(fst(x))) \<in> nat \<times> nat \<rightarrow> nat\<close>
   proof(rule func.lam_type)
     fix x
@@ -1867,37 +1566,100 @@ next
     by (rule pisubsig)
 qed
 
-(*
-    hence G:\<open>x \<in> {succ(fst(p)). p \<in> nat \<times> nat}\<close>
-      by (unfold add_g_def)
-    show \<open>x \<in> (nat \<times> nat) \<times> nat\<close>
-    proof (rule RepFunE[OF G])
-      fix y
-      assume \<open>y \<in> (nat \<times> nat)\<close>
-      assume D:\<open>x = succ(fst(y))\<close>
-      show \<open>x \<in> (nat \<times> nat) \<times> nat\<close>
-*)
-lemma addg2dom : \<open>nat \<times> nat \<subseteq> domain(add_g2)\<close>
-proof(unfold add_g2_def)
+lemma addgdom : \<open>nat \<times> nat \<subseteq> domain(add_g)\<close>
+proof(unfold add_g_def)
   have e:\<open>domain(\<lambda>x\<in>nat \<times> nat. succ(fst(x))) = nat \<times> nat\<close>
-    by (rule domain_lam)  (*"domain(Lambda(A,b)) = A"*)
+    by (rule domain_lam)  (* "domain(Lambda(A,b)) = A" *)
   show \<open>nat \<times> nat \<subseteq>
     domain(\<lambda>x\<in>nat \<times> nat. succ(fst(x)))\<close>
     by (rule subst, rule sym, rule e, auto)
 qed
 
+lemma plussucc:
+  assumes F:\<open>f \<in> (nat\<rightarrow>nat)\<close>
+  assumes H:\<open>satpc(f,nat,add_g)\<close>
+  shows \<open>\<forall>n \<in> nat . f`succ(n) = succ(f`n)\<close>
+proof
+  fix n
+  assume J:\<open>n\<in>nat\<close>
+  from H
+  have H:\<open>\<forall>n \<in> nat . f`succ(n) = (\<lambda>x\<in>(nat*nat). succ(fst(x)))` <f`n, n>\<close>
+    by (unfold satpc_def, unfold add_g_def)
+  have H:\<open>f`succ(n) = (\<lambda>x\<in>(nat*nat). succ(fst(x)))` <f`n, n>\<close>
+    by (rule bspec[OF H J])
+  have Q:\<open>(\<lambda>x\<in>(nat*nat). succ(fst(x)))` <f`n, n> = succ(fst(<f`n, n>))\<close>
+  proof(rule func.beta)
+    show \<open>\<langle>f ` n, n\<rangle> \<in> nat \<times> nat\<close>
+    proof
+      show \<open>f ` n \<in> nat\<close> 
+        by (rule func.apply_funtype[OF F J])
+      show \<open>n \<in> nat\<close> 
+        by (rule J)
+    qed
+  qed
+  have HQ:\<open>f`succ(n) = succ(fst(<f`n, n>))\<close>
+    by (rule trans[OF H Q])
+  have K:\<open>fst(<f`n, n>) = f`n\<close>
+    by auto
+  hence K:\<open>succ(fst(<f`n, n>)) = succ(f`n)\<close>
+    by (rule subst_context)
+  show \<open>f`succ(n) = succ(f`n)\<close>
+    by (rule trans[OF HQ K])
+qed
 
+theorem addition:
+  assumes \<open>a\<in>nat\<close>
+  shows
+ \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>nat)) \<and> ((f`0) = a) \<and> satpc(f,nat,add_g))\<close>
+(* where "satpc(f,nat,add_g)" means "\<forall>n \<in> nat . f`succ(n) = succ(f`n)" *)
+proof(rule rec_thm.recursion, unfold rec_thm_def)
+  show \<open>a \<in> nat \<and> add_g \<in> nat \<times> nat \<rightarrow> nat\<close>
+  proof
+    show \<open>a\<in>nat\<close> by (rule assms(1))
+  next
+    show \<open>add_g \<in> nat \<times> nat \<rightarrow> nat\<close>
+    proof(unfold Pi_def, rule CollectI)
+      show \<open>add_g \<in> Pow((nat \<times> nat) \<times> nat)\<close>
+        by (rule addgsubpow)
+    next
+      have A2: \<open>nat \<times> nat \<subseteq> domain(add_g)\<close>
+        by(rule addgdom)
+      have A3: \<open>function(add_g)\<close>
+        by (rule addgfun)
+      show \<open>nat \<times> nat \<subseteq> domain(add_g) \<and> function(add_g)\<close>
+        by(rule conjI[OF A2 A3])
+    qed
+  qed
+qed
 
-lemma addgdom : \<open>nat \<times> nat \<subseteq> domain(add_g)\<close>
+(* ========END========= *)
+
+definition add_g2 :: \<open>i\<close>
+  where add_g2_def : \<open>add_g2 == {p \<in> (nat \<times> nat) \<times> nat. snd(p) = succ(fst(fst(p)))}\<close>
+
+theorem addg2subpow : \<open>add_g2 \<in> Pow((nat \<times> nat) \<times> nat)\<close>
+proof
+  show \<open>add_g2 \<subseteq> (nat \<times> nat) \<times> nat\<close>
+  proof
+    fix x
+    assume \<open>x \<in> add_g2\<close>
+    hence G:\<open>x \<in> {p \<in> (nat \<times> nat) \<times> nat . snd(p) = succ(fst(fst(p)))}\<close>
+      by (unfold add_g2_def)
+    show \<open>x \<in> (nat \<times> nat) \<times> nat\<close>
+      by(rule CollectD1[OF G])
+  qed
+qed
+
+lemma addg2dom : \<open>nat \<times> nat \<subseteq> domain(add_g2)\<close>
 proof
   fix x
   assume xnn:\<open>x\<in>nat \<times> nat\<close>
   hence fxn:\<open>fst(x)\<in>nat\<close> by auto
-  show \<open>x\<in>domain(add_g)\<close>
+  show \<open>x\<in>domain(add_g2)\<close>
   proof
 (*snd(p) = succ(fst(fst(p)))*)
-    show \<open>\<langle>x, succ(fst(x))\<rangle> \<in> add_g\<close>
-    proof(unfold add_g_def, rule CollectI)
+    show \<open>\<langle>x, succ(fst(x))\<rangle> \<in> add_g2\<close>
+    proof(unfold add_g2_def, rule CollectI)
       show \<open>\<langle>x, succ(fst(x))\<rangle> \<in> (nat \<times> nat) \<times> nat\<close>
       proof
         show \<open>x\<in>nat \<times> nat\<close> by (rule xnn)
@@ -1921,36 +1683,141 @@ proof
   qed
 qed
 
-lemma addgfun: \<open>function(add_g)\<close>
-proof(unfold function_def, unfold add_g_def, rule allI, rule allI, rule impI, rule allI, rule impI)
+lemma addg2fun: \<open>function(add_g2)\<close>
+proof(unfold function_def, unfold add_g2_def, rule allI, rule allI, rule impI, rule allI, rule impI)
   fix x y1 y2
-  assume H1:\<open>\<langle>x, y1\<rangle> \<in> add_g\<close>
-  assume H2:\<open>\<langle>x, y1\<rangle> \<in> add_g\<close>
+  assume H1:\<open>\<langle>x, y1\<rangle> \<in> add_g2\<close>
+  assume H2:\<open>\<langle>x, y1\<rangle> \<in> add_g2\<close>
   oops
 
-theorem addition:
-  assumes \<open>a\<in>nat\<close>
-  shows
- \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>nat)) \<and> ((f`0) = a) \<and> satpc(f,nat,add_g2))\<close>
-proof(rule rec_thm.recursion, unfold rec_thm_def)
-  show \<open>a \<in> nat \<and> add_g2 \<in> nat \<times> nat \<rightarrow> nat\<close>
-  proof
-    show \<open>a\<in>nat\<close> by (rule assms(1))
-  next
-    show \<open>add_g2 \<in> nat \<times> nat \<rightarrow> nat\<close>
-    proof(unfold Pi_def, rule CollectI)
-      show \<open>add_g2 \<in> Pow((nat \<times> nat) \<times> nat)\<close>
-        by (rule addg2subpow)
-    next
-      have A2: \<open>nat \<times> nat \<subseteq> domain(add_g2)\<close>
-        by(rule addg2dom)
-      have A3: \<open>function(add_g2)\<close>
-        by (rule addg2fun)
-      show \<open>nat \<times> nat \<subseteq> domain(add_g2) \<and> function(add_g2)\<close>
-        by(rule conjI[OF A2 A3])
+
+(* 
+then prove transfinite induction & recursion
+then define Von Neumann hierarchy
+then prove V=\<Union>(\<alpha>\<in>Ord).V\<alpha>
+trying to rewrite everything without replacement
+*)
+
+subsection \<open>Only\<close>
+
+text \<open>Quantifier "!x. P(x)" means "at most one object has property P"\<close>
+
+definition Only1 :: \<open>('a \<Rightarrow> o) \<Rightarrow> o\<close>  (binder \<open>!\<close> 10)
+  where only1_def: \<open>!x. P(x) \<equiv> (\<forall>x.\<forall>y. P(x) \<and> P(y) \<longrightarrow> x = y)\<close>
+
+lemma only1I [intro]: 
+  assumes H: \<open>(\<And>x y. (\<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y))\<close>
+  shows \<open>!x. P(x)\<close>
+  by (unfold only1_def, rule allI, rule allI, rule impI, rule H,
+        erule conjunct1, erule conjunct2)
+
+lemma only1D: \<open>!x. P(x) \<Longrightarrow> (\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y)\<close>
+  apply(unfold only1_def)
+  apply(rule mp, rule spec, erule spec)
+  apply(erule conjI, assumption)
+  done
+
+lemma only1E [elim]:
+  assumes major: \<open>!x. P(x)\<close>
+      and r: \<open>(\<And>x y. \<lbrakk>P(x); P(y)\<rbrakk> \<Longrightarrow> x = y) \<Longrightarrow> R\<close>
+    shows \<open>R\<close>
+  by (rule r, rule only1D[OF major], assumption+)
+
+
+lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
+  by auto
+
+lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
+proof -
+  assume Y:\<open>\<exists>!x. P(x)\<close>
+  show \<open>(!x. P(x))\<close>
+  proof(rule ex1E[OF Y])
+    fix x
+    assume Px:\<open>P(x)\<close>
+    assume J:\<open>\<forall>y. P(y) \<longrightarrow> y = x\<close>
+    show \<open>(!x. P(x))\<close>
+    proof
+      fix x1 x2
+      assume Px1:\<open>P(x1)\<close>
+      assume Px2:\<open>P(x2)\<close>
+      show \<open>x1 = x2\<close>
+      proof(rule trans, rule mp, rule spec[OF J], rule Px1)
+        show \<open>x = x2\<close>
+          by (rule sym, rule mp, rule spec[OF J], rule Px2)
+      qed
     qed
   qed
 qed
+
+subsection \<open>Uniqueness\<close>
+
+text \<open>Another uniqueness definition\<close>
+
+lemma ex1new_def: \<open>\<exists>!x. P(x) \<equiv> (\<exists>x. P(x)) \<and> (!x. P(x))\<close>
+proof (rule iff_reflection, rule iffI)
+  assume Y:\<open>\<exists>!x. P(x)\<close>
+  show \<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
+  proof
+    from Y show \<open>(\<exists>x. P(x))\<close> by auto
+  next
+    from Y show \<open>(!x. P(x))\<close> by (rule ex1newD2)
+  qed
+next
+  assume Y:\<open>(\<exists>x. P(x)) \<and> (!x. P(x))\<close>
+  hence Y2:\<open>(!x. P(x))\<close> by auto
+  show \<open>\<exists>!x. P(x)\<close>
+  proof
+    from Y show \<open>(\<exists>x. P(x))\<close> by auto
+  next
+    show \<open>\<And>x y. P(x) \<Longrightarrow> P(y) \<Longrightarrow> x = y\<close>
+      by (rule only1D[OF Y2], assumption+)
+  qed
+qed
+
+lemma ex1newI: \<open>\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> \<exists>!x. P(x)\<close>
+  by (unfold ex1new_def, rule conjI, assumption+)
+
+lemma ex1newE: \<open>\<exists>!x. P(x) \<Longrightarrow> (\<lbrakk>\<exists>x. P(x); !x. P(x)\<rbrakk> \<Longrightarrow> R) \<Longrightarrow> R\<close>
+  apply (unfold ex1new_def)
+  apply (assumption | erule exE conjE)+
+  done
+(*
+lemma ex1newD1: \<open>\<exists>!x. P(x) \<Longrightarrow> \<exists>x. P(x)\<close>
+  by (erule ex1newE)
+
+lemma ex1newD2: \<open>\<exists>!x. P(x) \<Longrightarrow> !x. P(x)\<close>
+  by (erule ex1newE)
+*)
+
+subsection\<open>Bounded existential quantifier\<close>
+
+definition Bonly :: "[i, i \<Rightarrow> o] \<Rightarrow> o"
+  where "Bonly(A, P) \<equiv> !x. x\<in>A \<and> P(x)"
+
+syntax
+  "_Bonly" :: "[pttrn, i, o] \<Rightarrow> o"  (\<open>(3!_\<in>_./ _)\<close> 10)
+translations
+  "!x\<in>A. P" \<rightleftharpoons> "CONST Bonly(A, \<lambda>x. P)"
+
+lemma bonlyI [intro]: "[| !x. (x\<in>A \<and> P(x)) |] ==> !x\<in>A. P(x)"
+  by (unfold Bonly_def, assumption)
+
+lemma bonlyE [elim!]: "[| !x\<in>A. P(x);  [| !x. (x\<in>A \<and> P(x)) |] ==> Q |] ==> Q"
+  by (unfold Bonly_def, blast)
+
+definition Bex1 :: "[i, i \<Rightarrow> o] \<Rightarrow> o"
+  where "Bex1(A, P) \<equiv> (\<exists>x\<in>A. P(x)) \<and> (!x\<in>A. P(x))"
+
+syntax
+  "_Bex1" :: "[pttrn, i, o] \<Rightarrow> o"  (\<open>(3\<exists>!_\<in>_./ _)\<close> 10)
+translations
+  "\<exists>!x\<in>A. P" \<rightleftharpoons> "CONST Bex1(A, \<lambda>x. P)"
+
+lemma bex1I [intro]: "[| \<exists>x\<in>A. P(x) ; !x\<in>A. P(x) |] ==> \<exists>!x\<in>A. P(x)"
+  by (unfold Bex1_def, auto)
+
+lemma bex1E [elim!]: "[| \<exists>!x\<in>A. P(x);  [| \<exists>x\<in>A. P(x) ; !x\<in>A. P(x) |] ==> Q |] ==> Q"
+  by (unfold Bex1_def, blast)
 
 
 lemma mychoice:
@@ -2007,6 +1874,17 @@ proof
     by auto
 qed
 
+lemma bfuch:
+  assumes H:\<open>\<forall>x\<in>A.\<exists>!y\<in>B(x). P(x,y)\<close>
+  shows \<open>\<forall>x\<in>A.\<exists>y\<in>B(x). P(x,y)\<close>
+proof
+  fix x
+  assume \<open>x\<in>A\<close>
+  hence \<open>\<exists>!y\<in>B(x). P(x,y)\<close>
+    by (rule bspec[OF H])
+  thus \<open>\<exists>y\<in>B(x). P(x, y)\<close> 
+    by auto
+qed
 
 lemma mkfun:
   assumes H:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B(x)\<close>
@@ -2092,15 +1970,23 @@ proof(unfold Pi_def)
   show \<open> \<exists>f. f \<in> {f \<in> Pow(Sigma(A, B)) . A \<subseteq> domain(f) \<and> function(f)}\<close>
 *)
 lemma kjhg:
-  assumes D:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B(x) \<and> P(x,y)\<close>
-  shows \<open>\<exists>!f. (f \<in> Pi(A,B)\<and> (\<forall>x\<in>A. P(x, f`y)))\<close>
-proof(rule PiI)
+  assumes D:\<open>\<forall>x\<in>A.\<exists>!y\<in>B(x). P(x,y)\<close>
+  shows \<open>\<exists>!f\<in>Pi(A,B).\<forall>x\<in>A. P(x, f`y)\<close>
+proof
+  have D1:\<open>\<forall>x\<in>A.\<exists>y\<in>B(x). P(x,y)\<close>
+    by (rule bfuch[OF D])
 
+  show \<open>\<exists>f\<in>Pi(A, B). \<forall>x\<in>A. P(x, f ` y)\<close>
+  proof
+
+
+    oops
+(*rule splt*)
 
 lemma kjhg:
   assumes D:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B \<and> <x,y>\<in>f\<close>
   shows \<open>f\<in>A\<rightarrow>B\<close>s
-proof(rule PiI)
+proof -(*rule PiI*)
   oops
 
 theorem plus:
@@ -2303,3 +2189,20 @@ proof
 qed
 
 end
+
+(* todo
+theorem nat_elem_is_ss:\<open>\<forall>m\<in>nat. n\<in>m \<longrightarrow> n\<subseteq>m\<close>
+proof(rule nat_induct_bound)
+  sorry (**)
+
+theorem nat_ldfghj:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. n\<subseteq>m \<and> n\<noteq>m \<longrightarrow> n\<in>m\<close>
+  sorry
+*)
+
+(*
+do it through ordinals.
+*)
+(*
+theorem nat_linord_ss:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<subseteq>n\<or>n\<subseteq>m\<close>
+  sorry
+*)
