@@ -1,5 +1,13 @@
-theory recursion imports ZF
+(*  Title:       Recursion theorem
+    Author:      Georgy Dunaev <georgedunaev at gmail.com>, 2020
+    Maintainer:  Georgy Dunaev <georgedunaev at gmail.com>
+*)
+section "Recursion Submission"
+
+theory recursion
+  imports ZF
 begin
+
 text \<open>Here we will prove Recursion Theorem and define addition.\<close>
 
 section \<open>Basic Set Theory\<close>
@@ -854,14 +862,16 @@ proof -
   qed
 qed
 
-locale rec_thm =
-  fixes A a g
-  assumes H1:\<open>a \<in> A\<close>
-  assumes H2:\<open>g : ((A*nat)\<rightarrow>A)\<close>
+locale recthm =
+  fixes A :: "i"
+    and a :: "i"
+    and g :: "i"
+  assumes hyp1 : \<open>a \<in> A\<close>
+    and hyp2 : \<open>g : ((A*nat)\<rightarrow>A)\<close>
 begin
 
 lemma l3:\<open>function(\<Union>pcs(A, a, g))\<close>
-  by (rule compatsetunionfun, rule pcs_lem, rule H1)
+  by (rule compatsetunionfun, rule pcs_lem, rule hyp1)
 
 lemma l1 : \<open>\<Union>pcs(A, a, g) \<subseteq> nat \<times> A\<close>
 proof
@@ -946,7 +956,7 @@ proof(unfold partcomp_def)
           proof
             show \<open>0 \<in> 1\<close> by auto
           next
-            show \<open>a \<in> A\<close> by (rule H1)
+            show \<open>a \<in> A\<close> by (rule hyp1)
           qed
         qed
       next
@@ -996,7 +1006,7 @@ next
         proof
           show \<open>0 \<in> nat\<close> by auto
         next
-          show \<open>a \<in> A\<close> by (rule H1)
+          show \<open>a \<in> A\<close> by (rule hyp1)
         qed
       qed
     next
@@ -1035,7 +1045,7 @@ proof(rule partcompE[OF F])
       have tmA:\<open>t ` m \<in> A\<close>
         by (rule func.apply_funtype[OF F1], auto)
       show \<open>g ` \<langle>t ` m, m\<rangle> \<in> A\<close>
-        by(rule func.apply_funtype[OF H2], auto, rule tmA, rule mnat)
+        by(rule func.apply_funtype[OF hyp2], auto, rule tmA, rule mnat)
     qed
     have \<open>cons(\<langle>succ(m), g ` \<langle>t ` m, m\<rangle>\<rangle>, t) \<in> (cons(succ(m),succ(m)) \<rightarrow> A)\<close>
       by (rule ljk)
@@ -1185,7 +1195,7 @@ proof
                 from txA and Q1 have txx:\<open>\<langle>t ` x, x\<rangle> \<in> A \<times> nat\<close>
                   by auto
                 have secp: \<open>g ` \<langle>t ` x, x\<rangle> \<in> A\<close>
-                  by(rule func.apply_type[OF H2 txx])
+                  by(rule func.apply_type[OF hyp2 txx])
                 from J1 and secp
                 have L2:\<open>\<langle>succ(x),g ` \<langle>t ` x, x\<rangle>\<rangle> \<in> nat \<times> A\<close>
                   by auto
@@ -1321,7 +1331,7 @@ proof (unfold satpc_def, rule ballI)
       hence Y3:\<open>t`succ(n) = g ` <t`n, n>\<close>
         by (rule bspec, auto)
       have e1:\<open>(\<Union>pcs(A, a, g)) ` succ(n) = t ` succ(n)\<close>
-      proof(rule valofunion, rule pcs_lem, rule H1)
+      proof(rule valofunion, rule pcs_lem, rule hyp1)
         show \<open>t \<in> pcs(A, a, g)\<close>
         proof(unfold pcs_def, rule CollectI)
           show \<open>t \<in> Pow(nat \<times> A)\<close>
@@ -1343,7 +1353,7 @@ proof (unfold satpc_def, rule ballI)
         show \<open>t ` succ(n) = t ` succ(n)\<close> by (rule refl)
       qed
       have e2:\<open>(\<Union>pcs(A, a, g)) ` n = t ` n\<close>
-      proof(rule valofunion, rule pcs_lem, rule H1)
+      proof(rule valofunion, rule pcs_lem, rule hyp1)
         show \<open>t \<in> pcs(A, a, g)\<close>
         proof(unfold pcs_def, rule CollectI)
           show \<open>t \<in> Pow(nat \<times> A)\<close>
@@ -1372,7 +1382,7 @@ proof (unfold satpc_def, rule ballI)
   qed
 qed
 
-theorem recursion:
+theorem recursionthm:
   shows \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>A)) \<and> ((f`0) = a) \<and> satpc(f,nat,g))\<close>
 (* where \<open>satpc(t,\<alpha>,g) == \<forall>n \<in> \<alpha> . t`succ(n) = g ` <t`n, n>\<close> *)
 proof 
@@ -1409,12 +1419,22 @@ end
 (* Definition of addition *)
 
 text \<open>
-Let's define function t = (a+_).
-Firstly we need to define a function g:nat \<times> nat \<rightarrow> nat, such that
-g`\<langle>t`n, n\<rangle> = t`succ(n) = a + (n + 1) = (a + n) + 1 = (t`n) + 1
-So g`\<langle>a, b\<rangle> = a + 1 and g(p) = succ(pr1(p))
+Let's define function t(x) = (a+x).
+Firstly we need to define a function \<open>g:nat \<times> nat \<rightarrow> nat\<close>, such that
+\<open>g`\<langle>t`n, n\<rangle> = t`succ(n) = a + (n + 1) = (a + n) + 1 = (t`n) + 1\<close>
+So \<open>g`\<langle>a, b\<rangle> = a + 1\<close> and \<open>g(p) = succ(pr1(p))\<close>
 and \<open>satpc(t,\<alpha>,g) \<Longleftrightarrow> \<forall>n \<in> \<alpha> . t`succ(n) = succ(t`n)\<close>.
 \<close>
+
+(*
+text \<open>
+Let's define function $t = (a+\_)$.
+Firstly we need to define a function $$g:nat \times nat \rightarrow nat $$, such that
+$g`\langle t`n, n\rangle = t`succ(n) = a + (n + 1) = (a + n) + 1 = (t`n) + 1$
+So $g`\langle a, b\<rangle> = a + 1$ and $g(p) = succ(pr1(p))$
+and \<open>satpc(t,\<alpha>,g) \<Longleftrightarrow> \<forall>n \<in> \<alpha> . t`succ(n) = succ(t`n)\<close>.
+\<close>
+*)
 
 definition add_g :: \<open>i\<close>
   where add_g_def : \<open>add_g == \<lambda>x\<in>(nat*nat). succ(fst(x))\<close>
@@ -1479,14 +1499,14 @@ qed
 
 text \<open>Theorem that addition of natural numbers exists 
 and unique in some sense. Due to theorem 'plussucc' the term
- "satpc(f,nat,add_g)" 
+ \<open>satpc(f,nat,add_g)\<close>
   can be replaced here with
- "\<forall>n \<in> nat . f`succ(n) = succ(f`n)".\<close>
+ \<open>\<forall>n \<in> nat . f`succ(n) = succ(f`n)\<close>.\<close>
 theorem addition:
   assumes \<open>a\<in>nat\<close>
   shows
  \<open>\<exists>!f. ((f \<in> (nat\<rightarrow>nat)) \<and> ((f`0) = a) \<and> satpc(f,nat,add_g))\<close>
-proof(rule rec_thm.recursion, unfold rec_thm_def)
+proof(rule recthm.recursionthm, unfold recthm_def)
   show \<open>a \<in> nat \<and> add_g \<in> nat \<times> nat \<rightarrow> nat\<close>
   proof
     show \<open>a\<in>nat\<close> by (rule assms(1))
