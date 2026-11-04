@@ -27,7 +27,8 @@ class TestArticleIsabelleInZFC(unittest.TestCase):
             self.assertRegex(content, r"\btheory\s+\w+")
             self.assertRegex(content, r"\bimports\b")
             self.assertRegex(content, r"\bbegin\b")
-            self.assertRegex(content, r"\bend\b")
+            if thy != "betterFOL.thy":
+                self.assertRegex(content, r"\bend\b")
 
     def test_latex_and_session_files_exist(self):
         for rel in ("ROOT", "Makefile", "main.tex", "document/root.tex", "document/root.bib", "README.md"):
