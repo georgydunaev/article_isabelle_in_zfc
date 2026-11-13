@@ -32,6 +32,6 @@ session "Recursion-Addition" (AFP) = ZF +
 (* Dependencies on document source files: *)
 
   document_files
-(*    "root.bib" *)
+    "root.bib"
     "root.tex"
 

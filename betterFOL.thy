@@ -55,6 +55,7 @@ where
   a2: \<open>(A \<longrightarrow> (B \<longrightarrow> C))\<longrightarrow>((A \<longrightarrow> B)\<longrightarrow>(A \<longrightarrow> C))\<close>
 
 theorem Ded: \<open>(P \<Longrightarrow> Q) \<Longrightarrow> P \<longrightarrow> Q\<close>
+  oops
 
 (*
 
@@ -71,4 +72,6 @@ theorem Ded: \<open>(P \<Longrightarrow> Q) \<Longrightarrow> P \<longrightarrow
 
   FalseE: \<open>False \<Longrightarrow> P\<close>
 *)
+
+end
 

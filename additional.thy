@@ -366,8 +366,8 @@ proof
 (*rule splt*)
 
 lemma kjhg:
-  assumes D:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B \<and> <x,y>\<in>f\<close>
-  shows \<open>f\<in>A\<rightarrow>B\<close>s
+  assumes D:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B \<and> \<langle>x,y\<rangle>\<in>f\<close>
+  shows \<open>f\<in>A\<rightarrow>B\<close>
 proof -(*rule PiI*)
   oops
 
