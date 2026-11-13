@@ -54,6 +54,15 @@ where
   a1: \<open>A \<longrightarrow> (B \<longrightarrow> A)\<close> and
   a2: \<open>(A \<longrightarrow> (B \<longrightarrow> C))\<longrightarrow>((A \<longrightarrow> B)\<longrightarrow>(A \<longrightarrow> C))\<close>
 
+(*
+  Note on Hilbert calculi and the Deduction Theorem:
+  In a Hilbert-style axiomatization based on modus ponens (mp) and axioms (a1, a2),
+  the deduction theorem (P \<Longrightarrow> Q) \<Longrightarrow> P \<longrightarrow> Q is an external meta-theorem proved by
+  structural induction over derivations of Pure judgments. Because Isabelle/Pure
+  does not provide internal reflection or induction over object derivations, this
+  meta-rule cannot be derived internally from (mp, a1, a2) alone without either
+  taking impI as a primitive rule or formalizing proof trees.
+*)
 theorem Ded: \<open>(P \<Longrightarrow> Q) \<Longrightarrow> P \<longrightarrow> Q\<close>
   oops
 

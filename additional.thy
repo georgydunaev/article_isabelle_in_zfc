@@ -66,11 +66,25 @@ proof
 qed
 
 lemma addg2fun: \<open>function(add_g2)\<close>
-proof(unfold function_def, unfold add_g2_def, rule allI, rule allI, rule impI, rule allI, rule impI)
+proof(unfold function_def, rule allI, rule allI, rule impI, rule allI, rule impI)
   fix x y1 y2
   assume H1:\<open>\<langle>x, y1\<rangle> \<in> add_g2\<close>
-  assume H2:\<open>\<langle>x, y1\<rangle> \<in> add_g2\<close>
-  oops
+  assume H2:\<open>\<langle>x, y2\<rangle> \<in> add_g2\<close>
+  have G1:\<open>\<langle>x, y1\<rangle> \<in> {p \<in> (nat \<times> nat) \<times> nat . snd(p) = succ(fst(fst(p)))}\<close>
+    using H1 by (unfold add_g2_def)
+  hence E1:\<open>snd(\<langle>x, y1\<rangle>) = succ(fst(fst(\<langle>x, y1\<rangle>)))\<close>
+    by (rule CollectD2)
+  hence Y1:\<open>y1 = succ(fst(x))\<close>
+    by auto
+  have G2:\<open>\<langle>x, y2\<rangle> \<in> {p \<in> (nat \<times> nat) \<times> nat . snd(p) = succ(fst(fst(p)))}\<close>
+    using H2 by (unfold add_g2_def)
+  hence E2:\<open>snd(\<langle>x, y2\<rangle>) = succ(fst(fst(\<langle>x, y2\<rangle>)))\<close>
+    by (rule CollectD2)
+  hence Y2:\<open>y2 = succ(fst(x))\<close>
+    by auto
+  from Y1 and Y2 show \<open>y1 = y2\<close>
+    by auto
+qed
 
 
 (* 
@@ -202,6 +216,12 @@ lemma bex1E [elim!]: "[| \<exists>!x\<in>A. P(x);  [| \<exists>x\<in>A. P(x) ; !
   by (unfold Bex1_def, blast)
 
 
+(*
+  Note on mychoice:
+  This lemma expresses the Axiom of Choice (AC) for families of non-empty sets.
+  In pure ZF without AC (as imported by ZF.thy), AC is independent and unprovable;
+  it requires ZF.AC or ZF.ZFC.
+*)
 lemma mychoice:
   assumes D:\<open>\<forall>x\<in>A.\<exists>y. y\<in>B(x)\<close>
   shows \<open>\<exists>f. f\<in>Pi(A,B)\<close>
@@ -365,6 +385,12 @@ proof
     oops
 (*rule splt*)
 
+(*
+  Note on exploratory lemmas kjhg and plus:
+  kjhg characterizes functions via uniqueness of functional values.
+  plus defines addition via satpc and add_g2; in recursion.thy addition
+  is already fully established via add_g and the master recursion theorem.
+*)
 lemma kjhg:
   assumes D:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B \<and> \<langle>x,y\<rangle>\<in>f\<close>
   shows \<open>f\<in>A\<rightarrow>B\<close>

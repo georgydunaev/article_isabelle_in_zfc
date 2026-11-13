@@ -203,13 +203,76 @@ class TestArticleIsabelleInZFC(unittest.TestCase):
         self.assertEqual(oops_count["my_IFOL.thy"], 0)
         self.assertEqual(sorry_count["my_IFOL.thy"], 0)
 
-        # recursion.thy has exactly 1 oops (domuncomp: domain monotonicity over union)
-        self.assertLessEqual(oops_count["recursion.thy"], 1)
-        self.assertEqual(sorry_count["recursion.thy"], 0)
+        # recursion.thy is fully proved with zero oops and zero sorry
+        self.assertEqual(
+            oops_count["recursion.thy"],
+            0,
+            "recursion.thy must have zero oops (domuncomp is fully proven)",
+        )
+        self.assertEqual(
+            sorry_count["recursion.thy"],
+            0,
+            "recursion.thy must have zero sorry",
+        )
 
         # betterFOL.thy has 1 oops for Ded theorem
         self.assertLessEqual(oops_count["betterFOL.thy"], 1)
         self.assertEqual(sorry_count["betterFOL.thy"], 0)
+
+    def test_domuncomp_proof_structure(self):
+        """Verify that theorem domuncomp in recursion.thy is fully proved with qed and no oops."""
+        rec_path = os.path.join(ROOT, "recursion.thy")
+        with open(rec_path, encoding="utf-8") as f:
+            content = f.read()
+
+        match = re.search(r"theorem\s+domuncomp\s*:.*?(?=theorem|\bdefinition\b|\blemma\b|\bend\b)", content, re.DOTALL)
+        self.assertIsNotNone(match, "theorem domuncomp not found in recursion.thy")
+        block = match.group(0)
+        self.assertIn("qed", block, "domuncomp must terminate with qed")
+        self.assertNotIn("oops", block, "domuncomp must not contain oops")
+        self.assertNotIn("sorry", block, "domuncomp must not contain sorry")
+        self.assertIn("domainE", block, "domuncomp proof should use domain elimination")
+        self.assertIn("UnionI", block, "domuncomp proof should use Union introduction")
+        self.assertIn("domainI", block, "domuncomp proof should use domain introduction")
+
+    def test_addg2fun_proof_structure(self):
+        """Verify that lemma addg2fun in additional.thy is fully proved with qed."""
+        add_path = os.path.join(ROOT, "additional.thy")
+        with open(add_path, encoding="utf-8") as f:
+            content = f.read()
+
+        match = re.search(r"lemma\s+addg2fun\s*:.*?(?=lemma|\bdefinition\b|\btheorem\b|\bsubsection\b|\bend\b)", content, re.DOTALL)
+        self.assertIsNotNone(match, "lemma addg2fun not found in additional.thy")
+        block = match.group(0)
+        self.assertIn("qed", block, "addg2fun must terminate with qed")
+        self.assertNotIn("oops", block, "addg2fun must not contain oops")
+        self.assertNotIn("sorry", block, "addg2fun must not contain sorry")
+
+    def test_theory_syntax_integrity(self):
+        """Verify all theory files contain well-formed keywords, proof blocks, and structural closures."""
+        for thy in THEORIES:
+            path = os.path.join(ROOT, thy)
+            with open(path, encoding="utf-8") as f:
+                content = f.read()
+
+            # Ensure theory header has valid structure
+            self.assertRegex(content, r"\btheory\s+\w+\s+imports\s+.*?\s+begin\b")
+            # Ensure file ends with 'end'
+            stripped = content.strip()
+            self.assertTrue(stripped.endswith("end"), f"Theory {thy} must end with 'end'")
+
+            # Check proof/qed nesting balance outside comments, cartouches, and strings
+            clean_code = re.sub(r"\(\*.*?\*\)", "", content, flags=re.DOTALL)
+            clean_code = re.sub(r"\\<open>.*?\\<close>", "", clean_code, flags=re.DOTALL)
+            clean_code = re.sub(r'".*?"', "", clean_code, flags=re.DOTALL)
+            proof_starts = len(re.findall(r"\bproof\b", clean_code))
+            qed_ends = len(re.findall(r"\bqed\b", clean_code))
+            oops_count = len(re.findall(r"\boops\b", clean_code))
+            self.assertGreaterEqual(
+                qed_ends + oops_count,
+                proof_starts,
+                f"Mismatched proof blocks vs qed/oops in {thy}: {proof_starts} proofs vs {qed_ends} qeds + {oops_count} oops",
+            )
 
     def test_latex_and_session_files_exist(self):
         """Verify existence and non-emptiness of all document build pipeline files."""
