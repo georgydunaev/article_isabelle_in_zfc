@@ -47,15 +47,13 @@ abbreviation inv :: "('a \<Rightarrow> 'b) \<Rightarrow> ('b \<Rightarrow> 'a)" 
 definition wf :: "('a \<times> 'a) set \<Rightarrow> bool"
   where "wf r \<longleftrightarrow> (\<forall>P. (\<forall>x. (\<forall>y. (y, x) \<in> r \<longrightarrow> P y) \<longrightarrow> P x) \<longrightarrow> (\<forall>x. P x))"
 
-axiomatization elts :: "V \<Rightarrow> V set"
- where ext [intro?]:    "elts x = elts y \<Longrightarrow> x=y"
-   and down_raw:        "Y \<subseteq> elts x \<Longrightarrow> Y \<in> range elts"
-   and Union_raw:       "X \<in> range elts \<Longrightarrow> Union (elts ` X) \<in> range elts"
-   and Pow_raw:         "X \<in> range elts \<Longrightarrow> inv elts ` Pow X \<in> range elts"
-   and replacement_raw: "X \<in> range elts \<Longrightarrow> f ` X \<in> range elts"
-   and inf_raw:         "range (g :: nat \<Rightarrow> V) \<in> range elts"
-   and foundation:      "wf {(x,y). x \<in> elts y}"
-
+(*
+  Alignment with Paulson's ZFC_in_HOL cumulative hierarchy:
+  The cumulative hierarchy type V, element extractor elts :: "V \<Rightarrow> V set",
+  and set constructor vset :: "V set \<Rightarrow> V" are provided directly by ZFC_in_HOL.
+  Axiomatic properties (extensionality, foundation, separation/downwards closure,
+  powerset, union, replacement, infinity) are established theorems in ZFC_in_HOL.
+*)
 
 theorem t1 : \<open>A \<Longrightarrow> A\<close>
 proof -
@@ -66,8 +64,7 @@ qed
 
 axiomatization qwe :: "bool set"
 
-theorem t2 : \<open>elts 0=elts 0\<close>
-  oops
-(**)
+theorem t2 : \<open>elts 0 = elts 0\<close>
+  by (rule refl)
 
 end

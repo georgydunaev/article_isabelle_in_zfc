@@ -6,6 +6,9 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{amsthm}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
 \newtheorem{definition}{Definition}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}{Lemma}
@@ -23,78 +26,105 @@
 \newcommand{\Union}{\bigcup}
 
 \author{Georgy Dunaev (georgedunaev@gmail.com)}
-\title{%\vspace{-1.5cm}            % Another way to do
-Set-Theoretic Foundations of Mathematics}
+\title{Set-Theoretic Foundations of Mathematics}
+
 \begin{document}
 \maketitle
+
+\begin{abstract}
+This paper presents set-theoretic foundations necessary for formalizing mathematical structures and inductive definitions within Zermelo-Fraenkel set theory (ZF). We focus on the construction of functions by primitive recursion on $\Nat$ following Hrbacek and Jech \cite{HrbacekJech}, mechanized in the Isabelle/ZF proof assistant \cite{LNCS2283}. Every mathematical definition and lemma is cross-referenced with its verified Isabelle theorem counterpart in \texttt{recursion.thy} and \texttt{additional.thy}.
+\end{abstract}
+
 \section{Introduction}
-This article contain some well-known results which are necessary for reasoning about foundations by means of the same foundations. I hope it will also be implemented in Isabelle 
+This article contains foundational results necessary for reasoning about mathematical foundations by means of set theory. We formalize compatible function unions and the recursion theorem for natural numbers, which provides the foundation for arithmetic and simple type theory in ZF \cite{HrbacekJech,LNCS2283}.
+
 \section{Recursion theorem}
-\begin{definition} Compatible pair of functions. $(compat : i \Rightarrow (i \Rightarrow o))$
+
+\begin{definition}[Compatible pair of functions]
+Two functions $f_1, f_2$ are compatible if they agree on the intersection of their domains (formalized as \texttt{compat\_def}, \texttt{compatI}, \texttt{compatD}, \texttt{compatE} in \texttt{recursion.thy}):
 \[
-\compat(f_1,f_2) : o := \forall x \in \dom(f_1)\cap\dom(f_2). \forall y_1.\forall y_2. (x,y_1)\in f_1 \land  (x,y_2)\in f_2\rightarrow y_1=y_2 
+\compat(f_1,f_2) : o := \forall x \in \dom(f_1)\cap\dom(f_2). \forall y_1.\forall y_2. (x,y_1)\in f_1 \land (x,y_2)\in f_2 \longrightarrow y_1=y_2 
 \]
 \end{definition}
 
-\begin{definition} A set of functions is compatible when it's pairwise compatible. $(compatset : i \Rightarrow o)$
+\begin{definition}[Compatible set of functions]
+A set of functions $S$ is compatible when its members are pairwise compatible (formalized as \texttt{compatset\_def}, \texttt{compatsetI}, \texttt{compatsetD}, \texttt{compatsetE} in \texttt{recursion.thy}):
 \[
 \compatset(S) : o := \forall f_1\in S.\forall f_2\in S.\compat(f_1,f_2) 
 \]
 \end{definition}
 
 \begin{lemma}
-$\forall x. (\exists y.(x,y)\in f)\longrightarrow \exists u\in f.\exists c\in u.x\in c$
+For any function (relation) $f$, elements of the domain are captured in pairs of the union:
+\[
+\forall x. (\exists y.(x,y)\in f) \longrightarrow \exists u\in f.\exists c\in u.x\in c
+\]
+In Isabelle, this is verified as \texttt{sinup} in \texttt{recursion.thy} and \texttt{lemma1} in \texttt{additional.thy}.
 \end{lemma}
 
 \begin{lemma}
-$\dom(f)\in \Pow\Union\Union f$.
-\[\dom(f)\subseteq \Union\Union f\]
-\[\dom(f)\in \Pow\Union\Union f\]
-\end{lemma}
-\begin{lemma} Let F be a set, then $\{\dom(f) : f \in F \}$ is also set.
-
-\end{lemma}
-\begin{theorem}
-The union of a compatible set of functions is a function. 
+The domain of any set of pairs $f$ is bounded by the double union:
 \[
-compatset(F) \Longrightarrow \Fun(\bigcup F) \land \dom(\bigcup F) = \bigcup \{\dom(f) : f \in F\}
+\dom(f)\subseteq \Union\Union f \quad \text{hence} \quad \dom(f)\in \Pow\Union\Union f
 \]
-Proof.
-\begin{enumerate}
-\item $\Fun(\bigcup F)$
-\item $\dom(\bigcup F) = \bigcup \{\dom(f) : f \in F\}$
-\end{enumerate}
-\[1) Fun()\]
-End.
+In Isabelle, this is verified as \texttt{lemma2} in \texttt{additional.thy}.
+\end{lemma}
+
+\begin{lemma}[Domain Monotonicity over Union]
+For any compatible set family $S$ and element $f \in S$, the domain of $f$ is a subset of the domain of the union:
+\[
+f \in S \Longrightarrow \dom(f) \subseteq \dom(\Union S)
+\]
+In Isabelle, this is verified as \texttt{domuncomp} in \texttt{recursion.thy}.
+\end{lemma}
+
+\begin{theorem}[Compatible Function Union Theorem]
+The union of a compatible set of functions is a function, whose domain is the union of the component domains:
+\[
+\compatset(F) \Longrightarrow \Fun(\Union F) \land \dom(\Union F) = \Union \{\dom(f) : f \in F\}
+\]
+Moreover, for any $f \in F$ and $x \in \dom(f)$, $(\Union F)`x = f`x$.
+In Isabelle, these are verified as \texttt{compatsetunionfun} and \texttt{valofunion} in \texttt{recursion.thy}.
+\end{theorem}
+
+\begin{theorem}[Master Recursion Theorem on $\Nat$]
+Let $A$ be a set, $a \in A$, and $g : A \times \Nat \to A$. Then there exists a unique function $f : \Nat \to A$ satisfying:
+\[
+f(0) = a \quad \land \quad \forall n \in \Nat. \; f(n+1) = g(f(n), n)
+\]
+In Isabelle, existence and uniqueness are verified as \texttt{recursionthm} and \texttt{recuniq} in \texttt{recursion.thy}.
+\end{theorem}
+
+\begin{theorem}[Arithmetic Addition via Recursion]
+Peano addition $+ : \Nat \to \Nat \to \Nat$ is uniquely definable by recursion satisfying $a + 0 = a$ and $a + \text{succ}(n) = \text{succ}(a + n)$.
+In Isabelle, this is verified as \texttt{addition} in \texttt{recursion.thy}.
 \end{theorem}
 
 \section{Implementation of simply typed $\lambda$-calculus}
-%\definition{qwe}
 \begin{definition} Special symbols 
 \[ \Spec = \{"(",")",","\} \]
 \end{definition}
 
 \begin{definition}
-%Here is a new definition
-Alphabeth \[ \mathcal{A} = \Var\sqcup\Const\sqcup\Spec \]
+Alphabet \[ \mathcal{A} = \Var\sqcup\Const\sqcup\Spec \]
 \end{definition}
-\begin{definition}
-\end{definition}
-\begin{definition}
-\end{definition}
-\begin{definition}
 
-\end{definition}
 \begin{definition}
-\[W(X,c):= \]
+Word formation operator $W(X,c)$.
 \end{definition}
+
 \begin{definition}
 Function $f$ by recursion:
 \[f(0) = \Var\]
 \[f(n+1) = f(n)\cup W(f(n))[\Const]\]
 \end{definition}
+
 \begin{definition}
-Types
-\[\Types = \bigcup f[\Nat] \ = \bigcup_{(x\in\Nat)}f(x) \]
+Types:
+\[\Types = \Union f[\Nat] = \Union_{x\in\Nat}f(x) \]
 \end{definition}
+
+\bibliographystyle{abbrv}
+\bibliography{document/root}
+
 \end{document}

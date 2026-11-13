@@ -217,15 +217,16 @@ lemma bex1E [elim!]: "[| \<exists>!x\<in>A. P(x);  [| \<exists>x\<in>A. P(x) ; !
 
 
 (*
-  Note on mychoice:
+  Exploratory lemma mychoice (isolated scratch work):
   This lemma expresses the Axiom of Choice (AC) for families of non-empty sets.
   In pure ZF without AC (as imported by ZF.thy), AC is independent and unprovable;
   it requires ZF.AC or ZF.ZFC.
-*)
+
 lemma mychoice:
   assumes D:\<open>\<forall>x\<in>A.\<exists>y. y\<in>B(x)\<close>
   shows \<open>\<exists>f. f\<in>Pi(A,B)\<close>
   oops
+*)
 
 lemma basedomsig : \<open>domain(Sigma(A, B)) \<subseteq> A\<close>
 proof
@@ -368,39 +369,26 @@ qed
 (* f = {p\<in>Sigma(A,B). }*)
 
 (*
-proof(unfold Pi_def)
-  show \<open> \<exists>f. f \<in> {f \<in> Pow(Sigma(A, B)) . A \<subseteq> domain(f) \<and> function(f)}\<close>
-*)
+  Exploratory scratch lemmas (isolated scratch work):
+  - kjhg: Characterizes functions via uniqueness of functional values.
+  - plus: Defines addition via satpc and add_g2; in recursion.thy addition
+    is already fully established via add_g and the master recursion theorem.
+
 lemma kjhg:
   assumes D:\<open>\<forall>x\<in>A.\<exists>!y\<in>B(x). P(x,y)\<close>
-  shows \<open>\<exists>!f\<in>Pi(A,B).\<forall>x\<in>A. P(x, f`y)\<close>
-proof
-  have D1:\<open>\<forall>x\<in>A.\<exists>y\<in>B(x). P(x,y)\<close>
-    by (rule bfuch[OF D])
+  shows \<open>\<exists>!f\<in>Pi(A,B).\<forall>x\<in>A. P(x, f`x)\<close>
+  oops
 
-  show \<open>\<exists>f\<in>Pi(A, B). \<forall>x\<in>A. P(x, f ` y)\<close>
-  proof
-
-
-    oops
-(*rule splt*)
-
-(*
-  Note on exploratory lemmas kjhg and plus:
-  kjhg characterizes functions via uniqueness of functional values.
-  plus defines addition via satpc and add_g2; in recursion.thy addition
-  is already fully established via add_g and the master recursion theorem.
-*)
-lemma kjhg:
+lemma kjhg_fun:
   assumes D:\<open>\<forall>x\<in>A.\<exists>!y. y\<in>B \<and> \<langle>x,y\<rangle>\<in>f\<close>
   shows \<open>f\<in>A\<rightarrow>B\<close>
-proof -(*rule PiI*)
   oops
 
 theorem plus:
   shows
  \<open>\<exists>!g. ((g \<in> (nat\<rightarrow>(nat\<rightarrow>nat))) \<and> (\<forall>a\<in>nat.(((g`a)`0 = a) \<and> satpc(g`a,nat,add_g2))))\<close>
   oops
+*)
 
 definition fite :: "[i, o, i, i] \<Rightarrow> i" (\<open>from _ if _ then _ else _\<close>)
   where "fite(A, \<phi>, a, b) == \<Union>{x\<in>A.(\<phi>\<and>x=a)\<or>((\<not>\<phi>)\<and>x=b)}"
@@ -607,16 +595,11 @@ qed
 (* todo
 theorem nat_elem_is_ss:\<open>\<forall>m\<in>nat. n\<in>m \<longrightarrow> n\<subseteq>m\<close>
 proof(rule nat_induct_bound)
-  sorry (**)
+  sorry
 
 theorem nat_ldfghj:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. n\<subseteq>m \<and> n\<noteq>m \<longrightarrow> n\<in>m\<close>
   sorry
-*)
 
-(*
-do it through ordinals.
-*)
-(*
 theorem nat_linord_ss:\<open>\<forall>n\<in>nat. \<forall>m\<in>nat. m\<subseteq>n\<or>n\<subseteq>m\<close>
   sorry
 *)

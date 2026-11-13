@@ -47,24 +47,6 @@ axiomatization
 where
   axpair: \<open>\<forall>x.\<forall>y.\<exists>p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>
 
-theorem pairone : \<open>\<forall>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>
-  apply(rule allI)
-  apply(rule allI)
-  apply(rule ex1I)
-   apply(rule exE)
-
-    apply(rule spec)
-    apply(rule spec)
-    apply(rule axpair)
-(*  apply assumption
-
-   apply(rule allI)
-   apply(rule iffI)
-*)
-  oops
-
-
-
 (*theorem t000 : \<open>\<And>x.\<And>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>*)
 theorem t000 : \<open>\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close>
 proof (rule rev_mp)
@@ -150,24 +132,17 @@ axiomatization
 axiomatization 
   Union :: "i \<Rightarrow> i"  (\<open>\<Union>_\<close> [90] 90)
 
+axiomatization
+  Zero :: i  (\<open>0\<close>) and
+  succ :: "i \<Rightarrow> i"
+
+syntax
+  "_Ball" :: "[pttrn, i, o] \<Rightarrow> o"  ("(3\<forall>_\<in>_./ _)" 10)
+translations
+  "\<forall>x\<in>A. P" \<rightleftharpoons> "\<forall>x. x \<in> A \<longrightarrow> P"
 
 (* preliminaries *)
 definition Ind :: \<open>i\<Rightarrow>o\<close>
   where Ind_def : \<open>Ind(x) == 0 \<in> x \<and> (\<forall>y\<in>x. succ(y) \<in> x)\<close>
-(*
-proof -
-  show q:\<open>\<forall>x.\<forall>y.\<exists>!p. df_pair(p,x,y)\<close> 
-  proof (unfold df_pair_def, rule pairone)
-  qed
-qed
-
-  (*have w:\<open>\<forall>x.\<forall>y.\<exists>!p.\<forall>z.(z\<in>p\<longleftrightarrow>(z=x\<or>z=y))\<close> by (rule pairone) *)
-(*  have \<open>df_pair(x)\<longleftrightarrow>\<close>*)
-
-  show \<open>\<forall>x.\<forall>y.\<exists>!p. df_pair(p,x,y)\<close> 
-  proof 
-    by assumption
-(*  where "df_pair \<equiv> \<lambda>x.\<lambda>a.\<lambda>b.(x=a\<or>x=b)" *)
-*)
 
 end

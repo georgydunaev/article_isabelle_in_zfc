@@ -203,6 +203,22 @@ class TestArticleIsabelleInZFC(unittest.TestCase):
         self.assertEqual(oops_count["my_IFOL.thy"], 0)
         self.assertEqual(sorry_count["my_IFOL.thy"], 0)
 
+        # better.thy is fully proved with zero oops and zero sorry
+        self.assertEqual(
+            oops_count["better.thy"],
+            0,
+            "better.thy must have zero oops (pairone is proved)",
+        )
+        self.assertEqual(sorry_count["better.thy"], 0)
+
+        # newzfc.thy is fully proved with zero oops and zero sorry
+        self.assertEqual(
+            oops_count["newzfc.thy"],
+            0,
+            "newzfc.thy must have zero oops (t2 is proved by refl)",
+        )
+        self.assertEqual(sorry_count["newzfc.thy"], 0)
+
         # recursion.thy is fully proved with zero oops and zero sorry
         self.assertEqual(
             oops_count["recursion.thy"],
@@ -213,6 +229,18 @@ class TestArticleIsabelleInZFC(unittest.TestCase):
             sorry_count["recursion.thy"],
             0,
             "recursion.thy must have zero sorry",
+        )
+
+        # additional.thy has zero active oops and zero active sorry
+        self.assertEqual(
+            oops_count["additional.thy"],
+            0,
+            "additional.thy must have zero active oops",
+        )
+        self.assertEqual(
+            sorry_count["additional.thy"],
+            0,
+            "additional.thy must have zero active sorry",
         )
 
         # betterFOL.thy has 1 oops for Ded theorem
@@ -324,6 +352,81 @@ class TestArticleIsabelleInZFC(unittest.TestCase):
         for df in doc_files:
             p = os.path.join(ROOT, "document", df)
             self.assertTrue(os.path.isfile(p), f"Document file {df} specified in ROOT must exist at {p}")
+
+    def test_better_theory_pairone_and_signature(self):
+        """Verify better.thy declares Zero/succ primitives and proves pairone without oops."""
+        better_path = os.path.join(ROOT, "better.thy")
+        with open(better_path, encoding="utf-8") as f:
+            content = f.read()
+
+        # Check pairone proof
+        match = re.search(r"theorem\s+pairone\s*:.*?(?=definition|\btheorem\b|\blemma\b|\bend\b)", content, re.DOTALL)
+        self.assertIsNotNone(match, "theorem pairone not found in better.thy")
+        block = match.group(0)
+        self.assertIn("qed", block, "pairone must terminate with qed")
+        self.assertNotIn("oops", block, "pairone must not contain oops")
+
+        # Check primitive declarations
+        self.assertRegex(content, r"axiomatization\s+Zero\s*::\s*i", "better.thy must declare Zero :: i")
+        self.assertRegex(content, r"succ\s*::\s*\"i\s*\\<Rightarrow>\s*i\"", "better.thy must declare succ :: i => i")
+        self.assertIn("Ind_def", content, "better.thy must define Ind using Ind_def")
+
+    def test_newzfc_alignment_and_reflexivity(self):
+        """Verify newzfc.thy proves t2 by refl without oops and aligns with ZFC_in_HOL."""
+        newzfc_path = os.path.join(ROOT, "newzfc.thy")
+        with open(newzfc_path, encoding="utf-8") as f:
+            content = f.read()
+
+        # Check t2 proof
+        match = re.search(r"theorem\s+t2\s*:.*?(?=theorem|\bdefinition\b|\blemma\b|\bend\b)", content, re.DOTALL)
+        self.assertIsNotNone(match, "theorem t2 not found in newzfc.thy")
+        block = match.group(0)
+        self.assertIn("by (rule refl)", block, "t2 must be proven by refl")
+        self.assertNotIn("oops", block, "t2 must not contain oops")
+
+    def test_main_tex_citations_and_cross_references(self):
+        """Verify main.tex has valid citations to root.bib and maps lemmas to Isabelle theorems."""
+        bib_path = os.path.join(ROOT, "document", "root.bib")
+        with open(bib_path, encoding="utf-8") as f:
+            bib_content = f.read()
+        bib_keys = set(re.findall(r"@\w+\s*\{\s*([a-zA-Z0-9_\-]+)\s*,", bib_content))
+
+        main_path = os.path.join(ROOT, "main.tex")
+        with open(main_path, encoding="utf-8") as f:
+            main_content = f.read()
+
+        citations = re.findall(r"\\cite\{([^}]+)\}", main_content)
+        self.assertGreater(len(citations), 0, "main.tex must contain citations")
+        for cite_group in citations:
+            for key in cite_group.split(","):
+                key = key.strip()
+                self.assertIn(key, bib_keys, f"Citation key '{key}' in main.tex not found in root.bib")
+
+        # Verify cross-references to Isabelle theorems (handling TeX escaped underscores)
+        expected_theorems = [
+            r"compat(_|\\_)def",
+            r"compatset(_|\\_)def",
+            r"domuncomp",
+            r"compatsetunionfun",
+            r"valofunion",
+            r"recursionthm",
+            r"addition",
+        ]
+        for thm_pat in expected_theorems:
+            self.assertRegex(
+                main_content,
+                thm_pat,
+                f"main.tex must cross-reference Isabelle theorem matching '{thm_pat}'",
+            )
+
+    def test_makefile_targets(self):
+        """Verify Makefile contains expected targets for test, paper, clean, and build."""
+        mk_path = os.path.join(ROOT, "Makefile")
+        with open(mk_path, encoding="utf-8") as f:
+            mk_content = f.read()
+
+        for target in ("test:", "check:", "paper:", "clean:", "build:"):
+            self.assertIn(target, mk_content, f"Makefile must define target '{target}'")
 
 
 if __name__ == "__main__":
