@@ -63,6 +63,9 @@ where
   meta-rule cannot be derived internally from (mp, a1, a2) alone without either
   taking impI as a primitive rule or formalizing proof trees.
 *)
+theorem imp_refl: \<open>P \<longrightarrow> P\<close>
+  by (rule mp [OF mp [OF a2 a1] a1])
+
 theorem Ded: \<open>(P \<Longrightarrow> Q) \<Longrightarrow> P \<longrightarrow> Q\<close>
   oops
 
